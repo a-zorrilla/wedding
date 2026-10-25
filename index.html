@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#243f34"><title>Anna & Alec · Wedding Studio</title>
-<link rel="stylesheet" href="guest-list.css"><link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="guest-list.css"><link rel="stylesheet" href="site.css"><link rel="stylesheet" href="venue-planner.css">
 </head><body>
 <div class="page-frame">
 <header class="global-header"><div class="global-inner">
@@ -84,20 +84,92 @@
 
 </section>
 <section id="venuesView" class="tab-section hidden">
-<div class="section-breadcrumb">PLANNING / THE PLACES</div><div class="section-header venue-title"><div><div class="eyebrow">FINDING OUR PERFECT PLACE</div><h1>Venue planning<span class="heading-spark"> ✳</span></h1><p class="section-subtitle">A shortlist of places that could be the beginning of forever.</p></div><button class="action dark" id="addVenue">+ Add a venue</button></div>
-<div class="venue-stats"><div class="venue-stat"><span>Venues</span><strong id="vTotal">0</strong></div><div class="venue-stat"><span>Shortlisted</span><strong id="vShortlist">0</strong></div><div class="venue-stat"><span>Tours planned</span><strong id="vTours">0</strong></div><div class="venue-stat"><span>Booked</span><strong id="vBooked">0</strong></div></div>
-<div class="venue-tools"><div class="search-icon"><span>⌕</span><input id="venueSearch" placeholder="Search venues, locations, notes…" aria-label="Search venues"></div><select id="venueFilter" aria-label="Filter venues by status"><option value="">All statuses</option><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select><select id="venueSort" aria-label="Sort venues"><option value="new">Recently added</option><option value="name">Name A to Z</option><option value="cost">Lowest cost</option><option value="rating">Highest rating</option></select><button class="action outline" id="venueExport">Export CSV</button><button class="action outline" id="venueRefresh">↻ Refresh</button></div>
-<div id="venueCards" class="venue-grid"></div><div id="venueEmpty" class="empty-state hidden"><span class="empty-flower">✺</span><h2>A blank canvas</h2><p>No venues here yet. Add one, or adjust your filters to see your saved places.</p><button class="action dark" id="emptyAdd">+ Add a venue</button></div>
+  <div class="section-breadcrumb">PLANNING / THE PLACES</div>
+  <div class="section-header venue-title">
+    <div><div class="eyebrow">THE PLACE THAT FEELS LIKE US</div><h1>Venue planning<span class="heading-spark"> ✳</span></h1><p class="section-subtitle">Build a shortlist, compare the fine print, and decide together.</p></div>
+    <button class="action dark" id="addVenue" type="button">+ Add a venue</button>
+  </div>
+  <div class="venue-stats"><div class="venue-stat"><span>Venues</span><strong id="vTotal">0</strong></div><div class="venue-stat"><span>Shortlisted</span><strong id="vShortlist">0</strong></div><div class="venue-stat"><span>Tours planned</span><strong id="vTours">0</strong></div><div class="venue-stat"><span>Booked</span><strong id="vBooked">0</strong></div></div>
+  <div class="venue-tools venue-tools-v2">
+    <div class="search-icon"><span>⌕</span><input id="venueSearch" type="search" placeholder="Search venues, locations, notes…" aria-label="Search venues"></div>
+    <select id="venueFilter" aria-label="Filter venues by status"><option value="">All statuses</option><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select>
+    <select id="venueSort" aria-label="Sort venues"><option value="new">Recently added</option><option value="name">Name A to Z</option><option value="cost">Lowest estimated cost</option><option value="rating">Highest joint rating</option></select>
+    <div class="venue-view-switch" aria-label="Venue display mode" role="group"><button id="venueCardsMode" type="button" aria-pressed="true">▦ Cards</button><button id="venueTableMode" type="button" aria-pressed="false">☷ Table</button></div>
+    <button class="action outline" id="venueExport" type="button">Export CSV</button><button class="action outline" id="venueRefresh" type="button">↻ Refresh</button>
+  </div>
+  <p class="venue-guidance">Costs use each venue's planning headcount (default 100). Unknown fees are never assumed to be zero; incomplete estimates are marked <strong>Partial</strong>. Select a venue to see the full breakdown.</p>
+  <div id="venueCards" class="venue-grid"></div>
+  <div id="venueTableWrap" class="venue-table-wrap hidden" tabindex="0" role="region" aria-label="All venue data comparison table, scroll horizontally"><table id="venueTable" class="venue-data-table"></table></div>
+  <div id="venueEmpty" class="empty-state hidden"><span class="empty-flower">✺</span><h2>Your next favorite place</h2><p>Add a venue or adjust your search to see your options.</p><button class="action dark" id="emptyAdd" type="button">+ Add a venue</button></div>
 </section>
+
 <footer class="footer"><span>Anna & Alec <b>✦</b> the wedding studio</span><span>Made for the moments that matter.</span></footer>
 </main></div>
 <section id="authView" class="auth-screen"><div class="auth-pane"><div class="eyebrow">WELCOME HOME</div><h1>Let's make<br><em>something wonderful.</em></h1><p>Sign in to your private shared wedding planning space.</p><form id="authForm"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" minlength="6" required><div class="auth-buttons"><button type="submit" class="action dark">Sign in</button><button type="button" class="action outline" id="signUp">Create account</button></div></form><small>New accounts may require an email confirmation before sign-in.</small></div><div class="auth-visual">✳<span>A & A</span></div></section>
 <section id="setupView" class="auth-screen hidden"><div class="auth-pane"><div class="eyebrow">START PLANNING TOGETHER</div><h1>A shared space,<br><em>just for us.</em></h1><p>Create a wedding workspace, or join using your partner's private invitation.</p><form id="createWorkspace"><label for="workspaceName">Workspace name</label><input id="workspaceName" value="Our Wedding" required><button class="action dark" type="submit">Create workspace</button></form><div class="auth-divider">OR</div><form id="joinWorkspace"><label for="inviteToken">Invitation code</label><input id="inviteToken" placeholder="Paste the code from your invite link" required><button class="action outline" type="submit">Join shared workspace</button></form></div></section>
 <aside id="panel" class="panel" hidden></aside><div id="toast" class="toast" hidden role="status"></div>
-<dialog id="venueDialog" class="venue-dialog"><form id="venueForm"><div class="dialog-top"><div><div class="eyebrow">A SPECIAL PLACE</div><h2 id="dialogTitle">Add a venue</h2></div><button class="icon-button" type="button" id="venueClose" aria-label="Close">×</button></div>
-<div class="form-grid"><label>Venue name *<input name="name" required maxlength="200"></label><label>Location<input name="location" placeholder="City, state or address"></label><label>Website<input name="website" type="url" placeholder="https://..."></label><label>Contact / email<input name="contact"></label><label>Guest capacity<input name="capacity" type="number" min="0"></label><label>Estimated total cost ($)<input name="estimated_cost" type="number" step="0.01" min="0"></label><label>Status<select name="status"><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select></label><label>Rating<select name="rating"><option value="">Not yet rated</option><option value="1">1 / 5</option><option value="2">2 / 5</option><option value="3">3 / 5</option><option value="4">4 / 5</option><option value="5">5 / 5</option></select></label><label>Tour date<input name="tour_date" type="date"></label></div>
-<div class="form-grid notes-grid"><label>The things we love<textarea name="pros" rows="3"></textarea></label><label>Things to consider<textarea name="cons" rows="3"></textarea></label></div><label class="notes-single">Notes & follow-ups<textarea name="notes" rows="3"></textarea></label>
-<div class="dialog-actions"><button type="button" class="action danger hidden" id="venueDelete">Delete</button><span class="grow"></span><button type="button" class="action outline" id="venueCancel">Cancel</button><button type="submit" class="action dark" id="venueSave">Save venue</button></div></form></dialog>
+<dialog id="venueDetailDialog" class="venue-dialog venue-detail-dialog" aria-labelledby="venueDetailTitle">
+  <div class="dialog-top"><div><div class="eyebrow">VENUE NOTES &amp; COMPARISON</div><h2 id="venueDetailTitle">Venue details</h2></div><button class="icon-button" type="button" id="venueDetailClose" aria-label="Close venue details">×</button></div>
+  <div id="venueDetailBody"></div>
+  <div class="dialog-actions"><button type="button" class="action outline" id="venueDetailDismiss">Close</button><span class="grow"></span><button type="button" class="action dark" id="venueDetailEdit">Edit venue details ↗</button></div>
+</dialog>
+<dialog id="venueDialog" class="venue-dialog venue-edit-dialog" aria-labelledby="dialogTitle"><form id="venueForm">
+  <div class="dialog-top"><div><div class="eyebrow">ADD TO OUR SHORTLIST</div><h2 id="dialogTitle">Add a venue</h2></div><button class="icon-button" type="button" id="venueClose" aria-label="Close editor">×</button></div>
+  <p class="venue-form-intro">Fill in what you know; unknown details can stay blank. Costs will update as you find out more.</p>
+  <fieldset class="venue-form-group"><legend><span>01</span> Basics &amp; availability</legend><div class="form-grid">
+    <label>Venue name *<input name="name" maxlength="200" required placeholder="Venue or property name"></label>
+    <label>Location<input name="location" placeholder="City, region, country"></label>
+    <label>Website<input name="website" type="url" placeholder="https://..."></label>
+    <label>Photo URL<input name="image_url" type="url" placeholder="https://…jpg (optional)"></label>
+    <label>Contact information<input name="contact" placeholder="Coordinator, email, phone"></label>
+    <label>Stage<select name="status"><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select></label>
+    <label>Site tour date<input name="tour_date" type="date"></label>
+    <label class="form-full">Wedding date availability<textarea name="availability_notes" rows="2" placeholder="Open dates, seasonal restrictions, holds, etc."></textarea></label>
+  </div></fieldset>
+  <fieldset class="venue-form-group"><legend><span>02</span> Guest logistics &amp; capacity</legend><div class="form-grid">
+    <label>Closest airport<input name="closest_airport" placeholder="Airport name or code"></label>
+    <label>Airport → venue (minutes)<input name="airport_transfer_minutes" type="number" min="0" step="1"></label>
+    <label>Venue → guest hotels (minutes)<input name="accommodation_transfer_minutes" type="number" min="0" step="1"></label>
+    <label>Nearby hotel rooms (estimated)<input name="nearby_hotel_rooms" type="number" min="0" step="1"></label>
+    <label>On-site sleeping capacity (guests)<input name="on_site_sleeping_capacity" type="number" min="0" step="1"></label>
+    <label>Ceremony capacity (guests)<input name="ceremony_capacity" type="number" min="0" step="1"></label>
+    <label>Seated dinner capacity (guests)<input name="seated_dinner_capacity" type="number" min="0" step="1"></label>
+    <label>Indoor backup for rain?<select name="indoor_backup"><option value="">Not confirmed</option><option value="true">Yes</option><option value="false">No</option></select></label>
+    <label class="form-full">Rain / weather contingency<textarea name="rain_plan" rows="2" placeholder="Covered areas, tent policy, backup room..."></textarea></label>
+  </div></fieldset>
+  <fieldset class="venue-form-group"><legend><span>03</span> Services, suppliers &amp; restrictions</legend><div class="form-grid">
+    <label>Wedding coordination<select name="coordination_type"><option value="unknown">Unknown</option><option value="included">Included</option><option value="available_extra">Available for an extra fee</option><option value="not_offered">Not offered</option></select></label>
+    <label>Outside vendors<select name="external_vendor_policy"><option value="unknown">Unknown</option><option value="allowed">Allowed</option><option value="restricted">Allowed with restrictions</option><option value="not_allowed">Not allowed</option></select></label>
+    <label>Planning to use outside vendors?<select name="external_vendors_planned"><option value="">Not sure</option><option value="true">Yes</option><option value="false">No</option></select></label>
+    <label>Curfew / event end time<input name="curfew_time" type="time"></label>
+    <label class="form-full">Included in venue package<textarea name="venue_inclusions" rows="2" placeholder="Tables, chairs, flowers, staff, linens, sound..."></textarea></label>
+    <label class="form-full">Noise limits / restrictions<textarea name="noise_restrictions" rows="2" placeholder="Music restrictions, vendor rules, permits..."></textarea></label>
+  </div></fieldset>
+  <fieldset class="venue-form-group"><legend><span>04</span> Budget &amp; cost model</legend><p class="form-help">Food &amp; beverage is estimated from the total quote, or per-guest pricing, then floored by any stated minimum. Service and sales tax are estimated separately. Enter <strong>0</strong> only if you've confirmed a cost is waived.</p>
+  <div class="form-grid">
+    <label>Planning guests<input name="guest_count" type="number" value="100" required min="1" max="100000" step="1"></label>
+    <label>Site / rental fee ($)<input name="site_fee" type="number" min="0" step="0.01"></label>
+    <label>How is the site fee charged?<select name="site_fee_treatment"><option value="additional">Added to food &amp; beverage</option><option value="credited_to_fnb">Credited toward food &amp; beverage</option><option value="included_in_fnb">Included in food &amp; beverage</option></select></label>
+    <label>Food &amp; beverage minimum ($)<input name="food_beverage_minimum" type="number" min="0" step="0.01"></label>
+    <label>Food &amp; beverage per guest ($)<input name="food_beverage_per_guest" type="number" min="0" step="0.01"></label>
+    <label>Food &amp; beverage total quote ($)<input name="food_beverage_quote" type="number" min="0" step="0.01"></label>
+    <label>Service charge (% of F&amp;B)<input name="service_charge_pct" type="number" min="0" max="100" step="0.01"></label>
+    <label>Tax (% of rental + F&amp;B + service)<input name="tax_pct" type="number" min="0" max="100" step="0.01"></label>
+    <label>Outside vendor fee ($)<input name="external_vendor_fee" type="number" min="0" step="0.01"></label>
+    <label>Other venue fees ($)<input name="additional_fees" type="number" min="0" step="0.01"></label>
+    <label>Outside supplier budget ($)<input name="outside_vendor_budget" type="number" min="0" step="0.01"></label>
+    <label>Other wedding costs paid by us ($)<input name="other_wedding_costs" type="number" min="0" step="0.01"></label>
+    <label class="form-full">Description of additional fees<textarea name="additional_fees_description" rows="2" placeholder="Security, cleanup, corkage, coordinator, rentals..."></textarea></label>
+    <label class="form-full">Quoted all-in wedding total ($; optional override)<input name="quoted_total" type="number" min="0" step="0.01"><small>If you have an actual complete all-in quote, enter it here to replace the calculated total. Keep the detailed costs above for reference.</small></label>
+  </div><div class="form-cost-preview" id="venueFormEstimate" aria-live="polite">Enter costs to see your estimated total.</div></fieldset>
+  <fieldset class="venue-form-group"><legend><span>05</span> Our impressions</legend><div class="form-grid">
+    <label>Reasons we love it<textarea name="pros" rows="3"></textarea></label><label>Tradeoffs / concerns<textarea name="cons" rows="3"></textarea></label>
+    <label class="form-full">Other notes &amp; next steps<textarea name="notes" rows="3"></textarea></label>
+  </div></fieldset>
+  <p class="form-help">Your individual ratings are saved separately from these shared venue details. Open the venue card to score it.</p>
+  <div class="dialog-actions"><button type="button" class="action danger hidden" id="venueDelete">Delete venue</button><span class="grow"></span><button type="button" class="action outline" id="venueCancel">Cancel</button><button type="submit" class="action dark" id="venueSave">Save venue</button></div>
+</form></dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
-<script src="guest-list.js" defer></script><script src="main.js" defer></script>
+<script src="guest-list.js" defer></script><script src="venue-planner.js" defer></script><script src="main.js" defer></script>
 </div></body></html>
