@@ -123,15 +123,25 @@
   }
   async function loadVenues() {
     if(!workspace)return;
-    const [result,ratingResult]=await Promise.all([
-      db.from('venues').select('*').eq('workspace_id',workspace.id).order('created_at',{ascending:false}),
-      db.from('venue_ratings').select('*').eq('workspace_id',workspace.id)
+    const workspaceId=workspace.id;
+    const [venueResponse,ratingResponse,photoResponse,rosterResponse]=await Promise.all([
+      db.from('venues').select('*').eq('workspace_id',workspaceId).order('created_at',{ascending:false}),
+      db.from('venue_ratings').select('*').eq('workspace_id',workspaceId),
+      db.from('venue_photos').select('*').eq('workspace_id',workspaceId),
+      db.from('wedding_rating_slots').select('*').eq('workspace_id',workspaceId)
     ]);
-    if(result.error)return fail(result.error);
-    if(ratingResult.error)return fail(ratingResult.error);
-    venues=result.data||[];
+    for(const result of [venueResponse,ratingResponse,photoResponse,rosterResponse])if(result.error)return fail(result.error);
+    if(!workspace||workspace.id!==workspaceId)return;
+    const photos=photoResponse.data||[];
+    if(photos.length){
+      const {data:urls,error:signError}=await db.storage.from('wedding-venue-photos').createSignedUrls(photos.map(p=>p.storage_path),3600);
+      if(signError)fail(new Error('Unable to load some private venue pictures: '+signError.message));
+      if(urls)photos.forEach((p,i)=>{p.signed_url=urls[i]?.signedUrl||'';});
+    }
+    if(!workspace||workspace.id!==workspaceId)return;
+    venues=venueResponse.data||[];
     recountVenues();
-    window.VenuePlanner.setData(venues,ratingResult.data||[]);
+    window.VenuePlanner.setData(venues,ratingResponse.data||[],rosterResponse.data||[],photos);
   }
 
   function subscribe(){
@@ -139,6 +149,8 @@
     const w=workspace.id;
     const v=db.channel('wedding-venues-'+w).on('postgres_changes',{event:'*',schema:'public',table:'venues',filter:'workspace_id=eq.'+w},()=>loadVenues()).subscribe();
     const r=db.channel('wedding-venue-ratings-'+w).on('postgres_changes',{event:'*',schema:'public',table:'venue_ratings',filter:'workspace_id=eq.'+w},()=>loadVenues()).subscribe();
+    const p=db.channel('wedding-venue-photos-'+w).on('postgres_changes',{event:'*',schema:'public',table:'venue_photos',filter:'workspace_id=eq.'+w},()=>loadVenues()).subscribe();
+    const s=db.channel('wedding-rating-roster-'+w).on('postgres_changes',{event:'*',schema:'public',table:'wedding_rating_slots',filter:'workspace_id=eq.'+w},()=>loadVenues()).subscribe();
     const g=db.channel('wedding-guests-'+w).on('postgres_changes',{event:'*',schema:'public',table:'guest_lists',filter:'workspace_id=eq.'+w},payload=>{
       const incoming=Number(payload.new?.revision||0);
       if(!guestReady || incoming<=guestRevision)return;
@@ -147,7 +159,7 @@
         sync('● New guest changes available','saving');
         notice('Your partner updated the guest list. Finish any edits and refresh to see their changes. If you have unsaved changes, download a backup first.');
       }else loadGuests();
-    }).subscribe();channels.push(v,g,r);
+    }).subscribe();channels.push(v,g,r,p,s);
   }
 
   function initEvents(){
@@ -217,7 +229,7 @@
     });
   }
   async function start(){
-    if(!window.supabase||!window.GuestListApp||!window.VenuePlanner){notice('The app could not load its required scripts. Refresh the page and check your connection.',true);return;}
+    if(!window.supabase||!window.GuestListApp||!window.VenuePlanner||!window.VenueGallery){notice('The app could not load its required scripts. Refresh the page and check your connection.',true);return;}
     db=window.supabase.createClient(PROJECT_URL,PUBLIC_KEY);
     initEvents();await bootstrap();
   }
