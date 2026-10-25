@@ -145,14 +145,24 @@
     <label class="form-full">Included in venue package<textarea name="venue_inclusions" rows="2" placeholder="Tables, chairs, flowers, staff, linens, sound..."></textarea></label>
     <label class="form-full">Noise limits / restrictions<textarea name="noise_restrictions" rows="2" placeholder="Music restrictions, vendor rules, permits..."></textarea></label>
   </div></fieldset>
-  <fieldset class="venue-form-group"><legend><span>04</span> Budget &amp; cost model</legend><p class="form-help">Food &amp; beverage is estimated from the total quote, or per-guest pricing, then floored by any stated minimum. Service and sales tax are estimated separately. Enter <strong>0</strong> only if you've confirmed a cost is waived.</p>
+  <fieldset class="venue-form-group"><legend><span>04</span> Budget &amp; cost model</legend><p class="form-help">Food and beverage are estimated separately from per-guest pricing or total quotes, with applicable minimums. Older combined entries remain supported. Service and sales tax are estimated separately. Enter <strong>0</strong> only if you've confirmed a cost is waived.</p>
   <div class="form-grid">
     <label>Planning guests<input name="guest_count" type="number" value="100" required min="1" max="100000" step="1"></label>
-    <label>Site / rental fee ($)<input name="site_fee" type="number" min="0" step="0.01"></label>
+    <label>Quote currency<select name="currency"><option value="USD">USD · $</option><option value="EUR">EUR · €</option><option value="COP">COP · Col$</option><option value="GBP">GBP · £</option></select></label><label>Site / rental fee (local currency)<input name="site_fee" type="number" min="0" step="0.01"></label>
     <label>How is the site fee charged?<select name="site_fee_treatment"><option value="additional">Added to food &amp; beverage</option><option value="credited_to_fnb">Credited toward food &amp; beverage</option><option value="included_in_fnb">Included in food &amp; beverage</option></select></label>
-    <label>Food &amp; beverage minimum ($)<input name="food_beverage_minimum" type="number" min="0" step="0.01"></label>
+    <div class="form-full"><strong>Food costs</strong></div>
+<label>Food minimum<input name="food_minimum" type="number" min="0" step="0.01"></label>
+<label>Food per guest<input name="food_per_guest" type="number" min="0" step="0.01"></label>
+<label>Food total quote<input name="food_quote" type="number" min="0" step="0.01"></label>
+<div class="form-full"><strong>Beverage costs</strong></div>
+<label>Beverage minimum<input name="beverage_minimum" type="number" min="0" step="0.01"></label>
+<label>Beverage per guest<input name="beverage_per_guest" type="number" min="0" step="0.01"></label>
+<label>Beverage total quote<input name="beverage_quote" type="number" min="0" step="0.01"></label>
+<details class="form-full"><summary>Older combined food + beverage pricing</summary>
+<p class="form-help">Existing combined prices are preserved, but not added on top of new food and beverage amounts. Combined minimums may still set a price floor.</p>
+<div class="form-grid"><label>Food &amp; beverage minimum ($)<input name="food_beverage_minimum" type="number" min="0" step="0.01"></label>
     <label>Food &amp; beverage per guest ($)<input name="food_beverage_per_guest" type="number" min="0" step="0.01"></label>
-    <label>Food &amp; beverage total quote ($)<input name="food_beverage_quote" type="number" min="0" step="0.01"></label>
+    <label>Food &amp; beverage total quote ($)<input name="food_beverage_quote" type="number" min="0" step="0.01"></label></div></details>
     <label>Service charge (% of F&amp;B)<input name="service_charge_pct" type="number" min="0" max="100" step="0.01"></label>
     <label>Tax (% of rental + F&amp;B + service)<input name="tax_pct" type="number" min="0" max="100" step="0.01"></label>
     <label>Outside vendor fee ($)<input name="external_vendor_fee" type="number" min="0" step="0.01"></label>
