@@ -53,3 +53,46 @@
 .venue-filter-count{margin-left:auto;font-size:12px;color:#768478;font-weight:700;white-space:nowrap}
 .venue-country-flag{position:absolute;right:14px;top:14px;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:40px;background:#fffcf2ed;color:#365742;font-size:11px;font-weight:750;box-shadow:0 2px 14px #0002;white-space:nowrap}
 @media(max-width:710px){.venue-refine select{flex:1 1 165px;min-width:0;max-width:none}.venue-filter-count{margin-left:0;width:100%}}
+
+/* Uploadable galleries: interactive carousels with workspace-private image URLs. */
+.venue-image .venue-photo-surface{height:100%;width:100%;overflow:hidden}
+.venue-image .venue-photo-surface>img{width:100%;height:100%;object-fit:cover;display:block}
+.venue-photo-controls{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:9px;align-items:center;background:#172d27af;color:white;padding:4px 6px;border-radius:40px;z-index:2;font-size:11px;min-width:110px;justify-content:space-between}
+.venue-photo-controls button,.venue-gallery-arrow{width:28px;height:28px;border:1px solid #ffffff78;background:#f7f9f6eb;color:#1d3b2c;border-radius:50%;font:25px/1 Georgia,serif;display:grid;place-items:center;padding:0}
+.venue-photo-controls button:hover,.venue-gallery-arrow:hover{background:white}
+.venue-gallery-panel{margin:20px 0;padding:18px;border:1px solid #e0e5d8;background:#fffef9;border-radius:13px}
+.venue-gallery-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.venue-gallery-top h3{font:25px var(--serif);margin:0}
+.venue-gallery-top span,.venue-gallery-help{font-size:12px;color:#697c6a}
+.venue-gallery-frame{height:285px;position:relative;border-radius:12px;overflow:hidden;background:#e4e9df}
+.venue-gallery-frame>[data-gallery-surface]{height:100%}
+.venue-gallery-frame>[data-gallery-surface]>img{width:100%;height:100%;display:block;object-fit:contain;background:#d8ddd4}
+.venue-gallery-frame .venue-no-image{height:100%;color:#fff}
+.venue-gallery-arrow{position:absolute;top:43%;z-index:2;width:36px;height:36px;box-shadow:0 2px 12px #0003}
+.venue-gallery-arrow.left{left:12px}.venue-gallery-arrow.right{right:12px}
+.venue-gallery-bottom{position:absolute;bottom:9px;right:12px;left:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:white;font-size:12px;text-shadow:0 1px 6px #000}
+.venue-gallery-bottom a{font-size:12px;color:white;text-decoration:underline}
+.venue-gallery-thumbs{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.venue-gallery-thumbs button{width:72px;height:58px;padding:2px;border:2px solid transparent;border-radius:7px;background:none;overflow:hidden}
+.venue-gallery-thumbs button[aria-pressed=true]{border-color:#2e5a40}
+.venue-gallery-thumbs img{width:100%;height:100%;object-fit:cover;border-radius:4px}
+.venue-gallery-manager{border-top:1px solid #e7e8dc;padding-top:14px;margin-top:14px}
+.venue-gallery-upload-label{font-size:13px;font-weight:700;display:block;margin-bottom:10px}
+#venuePhotoFiles{display:block;width:100%;font-size:12px;margin-bottom:8px}
+.venue-gallery-help{line-height:1.55;margin:6px 0 12px}
+.venue-gallery-uploaded{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.venue-gallery-uploaded>div{padding:9px;border:1px solid #e2e5dd;border-radius:7px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px}
+.venue-gallery-uploaded span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.venue-gallery-remove{font-size:11px;color:#9d4038;background:#fff1ed;border:1px solid #e9d5cc;border-radius:6px;padding:6px}
+.rating-roster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.rating-person{background:#fffdfa;padding:15px;border-radius:10px;border:1px solid #e6e0d6;min-width:0}
+.rating-person-me{border-color:#8aa88e;background:#f5faf3}
+.rating-person-name{font-weight:800;color:#2c5238;font-size:15px;display:block;margin-bottom:5px}
+.rating-person strong{font:22px var(--serif);color:#31543e;display:block;margin-top:9px}
+.rating-person p{font-size:12px;color:#647365;white-space:pre-wrap;overflow-wrap:anywhere}
+.rating-person small{font-size:11px;color:#98754b}
+.rating-claim{border:1px dashed #a2bca4;background:#f8faf5;padding:14px;margin:13px 0;border-radius:9px}
+.rating-claim p,.rating-signin-help{font-size:13px;color:#506d56;line-height:1.5}
+.rating-claim button{margin:4px 8px 4px 0}
+@media(max-width:780px){.rating-roster{grid-template-columns:repeat(2,minmax(0,1fr))}.venue-gallery-uploaded{grid-template-columns:1fr}}
+@media(max-width:500px){.venue-gallery-frame{height:215px}.venue-gallery-thumbs button{width:57px;height:47px}}
