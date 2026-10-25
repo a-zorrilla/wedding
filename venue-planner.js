@@ -113,7 +113,7 @@
   }
   function openDetails(v){selected=v;renderDetails(v);$('#venueDetailDialog').showModal();}
   function openEdit(v){editing=v;$('#venueForm').reset();$('#dialogTitle').textContent=v?'Edit venue':'Add a venue';$('#venueDelete').classList.toggle('hidden',!v);
-    for(const name of EDITABLE){const input=$('#venueForm').elements.namedItem(name);if(!input)continue;const value=v?.[name];input.value=BOOLEANS.includes(name)?(value==null?'':String(value)):(value ?? (name==='guest_count'?100:''));}
+    for(const name of EDITABLE){const input=$('#venueForm').elements.namedItem(name);if(!input)continue;const value=v?.[name];input.value=BOOLEANS.includes(name)?(value==null?'':String(value)):(value ?? ({guest_count:100,status:'Researching',coordination_type:'unknown',external_vendor_policy:'unknown',site_fee_treatment:'additional'}[name] ?? ''));}
     if(!v){$('#venueForm').elements.namedItem('site_fee_treatment').value='additional';}
     updateFormPreview();$('#venueDialog').showModal();
   }
