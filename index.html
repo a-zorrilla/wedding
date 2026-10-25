@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wedding Venue Tracker</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#28342e;background:#f7f7f3;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}button,input,textarea,select{font:inherit}button{cursor:pointer}
+header{background:#24463d;color:white;padding:22px max(24px,calc((100vw - 1200px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+header h1{font-family:Georgia,serif;font-size:26px;margin:0}header small{color:#d8e6df}
+main{max-width:1200px;margin:32px auto;padding:0 20px 60px}
+.panel{background:#fff;border:1px solid #e2e7e1;box-shadow:0 5px 24px #24463d09;border-radius:15px;padding:25px;margin-bottom:22px}
+h2{font-family:Georgia,serif;font-size:24px;margin:0 0 15px}h3{margin:0}
+.muted{color:#66756b} .hide{display:none!important}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+button{border:0;background:#24463d;color:white;padding:11px 17px;border-radius:9px;font-weight:600}button:hover{opacity:.9}
+button.secondary{background:#edf2ed;color:#24463d}button.danger{background:#a33b32}button.outline{background:#fff;border:1px solid #ccd7cc;color:#24463d}
+input,select,textarea{border:1px solid #ccd7cc;border-radius:9px;padding:11px 12px;width:100%;background:white;color:#293b32}
+textarea{min-height:96px;resize:vertical}
+label{font-size:13px;font-weight:650;color:#495c50;display:block;margin-bottom:6px}
+.field{min-width:0}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.stat{background:#fff;border:1px solid #e2e7e1;border-radius:13px;padding:19px}.stat strong{display:block;font-size:28px;margin:4px 0}
+.toolbar{display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:10px;margin:20px 0}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.venue{border:1px solid #e2e7e1;background:white;border-radius:14px;padding:21px;display:flex;flex-direction:column;gap:13px}
+.venue h3{font-family:Georgia,serif;font-size:21px}.venue .meta{display:flex;gap:13px;flex-wrap:wrap;font-size:13px;color:#687a6c}
+.pill{background:#eaf1eb;color:#365949;display:inline-block;padding:5px 9px;border-radius:30px;font-size:12px;font-weight:700}
+.venue .notes{white-space:pre-line;color:#58695e;font-size:14px;overflow-wrap:anywhere}
+.venue .bottom{margin-top:auto;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.venue a{color:#28634e;overflow-wrap:anywhere}.error{color:#a33b32}.success{color:#276d44}
+#flash{min-height:25px;margin-bottom:10px;font-size:14px}
+dialog{border:0;border-radius:15px;box-shadow:0 20px 70px #0004;width:min(720px,95vw);max-height:90vh;overflow:auto;padding:26px}
+dialog::backdrop{background:#1228209c} dialog h2{margin-bottom:20px}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:19px}
+.auth{max-width:470px;margin:70px auto} .auth input{margin-bottom:12px}
+#inviteLink{font-size:13px} .empty{text-align:center;padding:45px 20px;color:#64766c}
+footer{text-align:center;color:#819086;font-size:12px;margin-top:30px}
+@media(max-width:950px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.toolbar{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.cards,.grid2,.grid3,.stats{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.panel{padding:18px}}
+</style></head><body>
+<header><div><h1>✿ Wedding Venue Tracker</h1><small>One place to plan, compare, and decide together</small></div><div class="row"><span id="userLabel"></span><button id="signOut" class="secondary hide">Sign out</button></div></header>
+<main><div id="flash" role="status" aria-live="polite"></div>
+<section id="auth" class="panel auth"><h2>Welcome</h2><p class="muted">Sign in or create an account with your email to access your private venue list.</p>
+<form id="authForm"><label for="email">Email</label><input id="email" type="email" required autocomplete="email"><label for="password">Password</label><input id="password" type="password" minlength="6" required autocomplete="current-password">
+<div class="row"><button type="submit">Sign in</button><button type="button" class="secondary" id="signUp">Create account</button></div></form>
+<p class="muted" style="font-size:13px">Depending on your Supabase settings, new accounts may require email confirmation.</p></section>
+<section id="setup" class="panel auth hide"><h2>Start planning together</h2><p class="muted">Create your shared wedding workspace or join using your partner's invite link.</p>
+<form id="createWorkspace"><label for="workspaceName">Workspace name</label><input id="workspaceName" value="Our Wedding" required><button type="submit">Create workspace</button></form>
+<hr style="border:0;border-top:1px solid #e1e7e1;margin:24px 0"><form id="joinWorkspace"><label for="inviteToken">Invitation code</label><input id="inviteToken" placeholder="Paste invitation code"><button class="secondary" type="submit">Join workspace</button></form></section>
+<section id="app" class="hide">
+<div class="panel"><div class="row between"><div><h2 id="workspaceTitle">Our Wedding</h2><div class="muted">Shared live venue shortlist</div></div><div class="row"><button class="secondary" id="share">Copy partner invite link</button><button id="addVenue">+ Add venue</button></div></div></div>
+<div class="stats"><div class="stat"><span class="muted">Total venues</span><strong id="total">0</strong></div><div class="stat"><span class="muted">Shortlisted</span><strong id="shortlist">0</strong></div><div class="stat"><span class="muted">Tours scheduled</span><strong id="tours">0</strong></div><div class="stat"><span class="muted">Booked</span><strong id="booked">0</strong></div></div>
+<div class="toolbar"><input id="search" placeholder="Search venue or location..." aria-label="Search venues">
+<select id="filter" aria-label="Filter by status"><option value="">All statuses</option><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select>
+<select id="sort" aria-label="Sort venues"><option value="new">Newest first</option><option value="name">Name A–Z</option><option value="cost">Lowest cost</option><option value="rating">Highest rating</option></select>
+<button id="export" class="outline">Export CSV</button><button id="refresh" class="outline">Refresh</button></div>
+<div id="cards" class="cards"></div><div id="empty" class="panel empty hide">No venues match. Add a venue or adjust your filters.</div>
+<footer>Private to workspace members • Changes save to Supabase</footer>
+</section></main>
+<dialog id="editor"><form id="venueForm"><div class="row between"><h2 id="editorTitle">Add venue</h2><button type="button" class="secondary" id="close">Close</button></div>
+<div class="grid2"><div class="field"><label>Name *</label><input name="name" required maxlength="200"></div><div class="field"><label>Location</label><input name="location"></div>
+<div class="field"><label>Website</label><input name="website" type="url" placeholder="https://..."></div><div class="field"><label>Contact / email</label><input name="contact"></div>
+<div class="field"><label>Guest capacity</label><input name="capacity" type="number" min="0"></div><div class="field"><label>Estimated total cost ($)</label><input name="estimated_cost" type="number" min="0" step=".01"></div>
+<div class="field"><label>Status</label><select name="status"><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select></div>
+<div class="field"><label>Rating (1–5)</label><select name="rating"><option value="">Not rated</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+<div class="field"><label>Tour date</label><input name="tour_date" type="date"></div></div>
+<div class="grid2" style="margin-top:15px"><div class="field"><label>Pros</label><textarea name="pros"></textarea></div><div class="field"><label>Cons</label><textarea name="cons"></textarea></div></div>
+<div class="field" style="margin-top:15px"><label>Notes and follow-ups</label><textarea name="notes"></textarea></div>
+<div class="form-actions"><button type="button" class="danger hide" id="deleteVenue">Delete venue</button><button type="submit" id="saveVenue">Save venue</button></div></form></dialog>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
+<script>
+const URL='https://iorausxqwrlggudtklib.supabase.co';
+const KEY='sb_publishable_mhqtMUMxfjCKM9AHOVgXgg_pBCmBcNU';
+const db=window.supabase.createClient(URL,KEY);
+const $=s=>document.querySelector(s);
+let session=null,workspace=null,venues=[],editing=null,channel=null;
+const fields=['name','location','website','contact','capacity','estimated_cost','status','rating','pros','cons','notes','tour_date'];
+const say=(message,error=false)=>{const e=$('#flash');e.textContent=message;e.className=error?'error':'success';};
+const err=e=>say(e?.message||String(e),true);
+const show=(id,on)=>$(id).classList.toggle('hide',!on);
+const validURL=u=>{try{const x=new URL(u);return ['http:','https:'].includes(x.protocol)?x.href:null}catch{return null}};
+const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>n==null?'Cost TBD':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
+function render(){
+const q=$('#search').value.trim().toLowerCase(),f=$('#filter').value,sort=$('#sort').value;
+const found=venues.filter(v=>(!f||v.status===f)&&(!q||[v.name,v.location,v.notes,v.pros,v.cons].some(x=>String(x||'').toLowerCase().includes(q))));
+found.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='cost'?(a.estimated_cost??Infinity)-(b.estimated_cost??Infinity):sort==='rating'?(b.rating??0)-(a.rating??0):new Date(b.created_at)-new Date(a.created_at));
+$('#total').textContent=venues.length;$('#shortlist').textContent=venues.filter(v=>v.status==='Shortlisted').length;$('#tours').textContent=venues.filter(v=>v.status==='Tour Scheduled').length;$('#booked').textContent=venues.filter(v=>v.status==='Booked').length;
+$('#cards').replaceChildren();show('#empty',!found.length);
+for(const v of found){const card=document.createElement('article');card.className='venue';
+const link=validURL(v.website);
+card.innerHTML='<div class="row between"><span class="pill">'+escapeHTML(v.status)+'</span><span style="color:#b58d40">'+(v.rating?'★'.repeat(v.rating):'Not rated')+'</span></div><div><h3>'+escapeHTML(v.name)+'</h3><div class="meta"><span>📍 '+escapeHTML(v.location||'Location TBD')+'</span><span>👥 '+escapeHTML(v.capacity??'Capacity TBD')+'</span></div></div><div class="meta"><strong>'+money(v.estimated_cost)+'</strong>'+(v.tour_date?'<span>Tour: '+escapeHTML(v.tour_date)+'</span>':'')+'</div>'+(v.pros?'<div class="notes"><b>Pros:</b> '+escapeHTML(v.pros)+'</div>':'')+(v.cons?'<div class="notes"><b>Cons:</b> '+escapeHTML(v.cons)+'</div>':'')+(v.notes?'<div class="notes">'+escapeHTML(v.notes)+'</div>':'')+'<div class="bottom">'+(link?'<a target="_blank" rel="noopener noreferrer" href="'+escapeHTML(link)+'">Visit website ↗</a>':'')+'</div>';
+const b=document.createElement('button');b.className='secondary';b.textContent='Edit';b.onclick=()=>openEditor(v);card.querySelector('.bottom').append(b);$('#cards').append(card)}
+}
+async function load(){if(!workspace)return;const {data,error}=await db.from('venues').select('*').eq('workspace_id',workspace.id).order('created_at',{ascending:false});if(error)return err(error);venues=data||[];render();}
+async function init(){const {data:{session:s}}=await db.auth.getSession();session=s;$('#userLabel').textContent=s?.user?.email||'';show('#signOut',!!s);show('#auth',!s);show('#setup',false);show('#app',false);
+if(channel){await db.removeChannel(channel);channel=null}if(!s)return;
+const {data,error}=await db.from('workspaces').select('*').order('created_at').limit(1);
+if(error)return err(error);
+workspace=data?.[0]||null;
+if(!workspace){show('#setup',true);const code=new URLSearchParams(location.search).get('invite');if(code)$('#inviteToken').value=code;return}
+$('#workspaceTitle').textContent=workspace.name;show('#app',true);await load();
+channel=db.channel('venues-'+workspace.id).on('postgres_changes',{event:'*',schema:'public',table:'venues',filter:'workspace_id=eq.'+workspace.id},()=>load()).subscribe();
+}
+$('#authForm').onsubmit=async e=>{e.preventDefault();const {error}=await db.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});if(error)err(error);else {say('Signed in');await init()}};
+$('#signUp').onclick=async()=>{if(!$('#authForm').reportValidity())return;const {data,error}=await db.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});if(error)err(error);else if(!data.session)say('Account created. Check your email to confirm, then sign in.');else{say('Account created');await init()}};
+$('#signOut').onclick=async()=>{await db.auth.signOut();workspace=null;venues=[];await init()};
+$('#createWorkspace').onsubmit=async e=>{e.preventDefault();const {error}=await db.rpc('create_wedding_workspace',{workspace_name:$('#workspaceName').value});if(error)err(error);else{say('Workspace created');await init()}};
+$('#joinWorkspace').onsubmit=async e=>{e.preventDefault();const {error}=await db.rpc('join_wedding_workspace',{token:$('#inviteToken').value.trim()});if(error)err(error);else{history.replaceState(null,'',location.pathname);say('Joined workspace');await init()}};
+$('#share').onclick=async()=>{const invite=location.origin+location.pathname+'?invite='+workspace.invite_token;try{await navigator.clipboard.writeText(invite);say('Invite link copied. Send it privately to your partner.')}catch{window.prompt('Copy your invitation link:',invite)}};
+$('#addVenue').onclick=()=>openEditor(null);$('#close').onclick=()=>$('#editor').close();
+function openEditor(v){editing=v;$('#venueForm').reset();$('#editorTitle').textContent=v?'Edit venue':'Add venue';show('#deleteVenue',!!v);for(const f of fields){const el=$('#venueForm').elements.namedItem(f);if(el)el.value=v?.[f]??''}$('#editor').showModal()}
+$('#venueForm').onsubmit=async e=>{e.preventDefault();const button=$('#saveVenue');button.disabled=true;const values={};for(const f of fields){const x=$('#venueForm').elements.namedItem(f).value.trim();values[f]=['capacity','estimated_cost','rating','tour_date'].includes(f)?(x===''?null:(f==='tour_date'?x:Number(x))):x}
+values.workspace_id=workspace.id;
+const result=editing?await db.from('venues').update(values).eq('id',editing.id).eq('workspace_id',workspace.id):await db.from('venues').insert(values);
+button.disabled=false;if(result.error)return err(result.error);$('#editor').close();say(editing?'Venue updated':'Venue added');await load()};
+$('#deleteVenue').onclick=async()=>{if(!editing||!confirm('Delete this venue permanently?'))return;const {error}=await db.from('venues').delete().eq('id',editing.id).eq('workspace_id',workspace.id);if(error)return err(error);$('#editor').close();say('Venue deleted');await load()};
+['#search','#filter','#sort'].forEach(id=>$(id).addEventListener(id==='#search'?'input':'change',render));
+$('#refresh').onclick=load;
+$('#export').onclick=()=>{const columns=['name','location','website','contact','capacity','estimated_cost','status','rating','tour_date','pros','cons','notes'];const csv=[columns.join(','),...venues.map(v=>columns.map(k=>'"'+String(v[k]??'').replace(/"/g,'""')+'"').join(','))].join('\r\n');const a=document.createElement('a');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=url;a.download='wedding-venues.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+db.auth.onAuthStateChange((_event,s)=>{if(s?.user?.id!==session?.user?.id)queueMicrotask(init)});
+init().catch(err);
+</script></body></html>
