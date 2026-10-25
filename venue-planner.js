@@ -129,6 +129,40 @@
   }
   function line(label,value,opts={}) {const text=opts.raw?value:safe(shown(value));return '<div class="venue-detail-row"><dt>'+safe(label)+'</dt><dd>'+text+'</dd></div>';}
   function infoGroup(title,rows){return '<section class="venue-detail-group"><h3>'+safe(title)+'</h3><dl>'+rows.join('')+'</dl></section>';}
+  function rosterRatingHTML(v,r){
+    const me=getContext().session?.user?.id;
+    const currentSlot=ratingSlots.find(s=>s.user_id===me);
+    const cards=ratingSlots.map(slot=>{
+      const saved=r.r.find(x=>slot.user_id&&x.user_id===slot.user_id);
+      return '<article class="rating-person'+(slot.user_id===me?' rating-person-me':'')+'"><span class="rating-person-name">'+safe(slot.display_name)+'</span>'+
+      '<span class="rating-caption">'+safe(slot.family_role)+(slot.user_id===me?' · You':'')+'</span><strong>'+
+      (saved?'★ '+safe(saved.score)+'/5':'Not rated')+'</strong>'+(saved?.notes?'<p>'+safe(saved.notes)+'</p>':'')+
+      (!slot.user_id?'<small>Account not linked yet</small>':'')+'</article>';
+    }).join('');
+    const available=currentSlot?[]:ratingSlots.filter(s=>!s.user_id);
+    const claim=available.length?'<div class="rating-claim"><p>Choose your name to connect your account before rating:</p>'+
+    available.map(s=>'<button type="button" class="action outline" data-claim-person="'+safe(s.person_key)+'">I am '+safe(s.display_name)+'</button>').join('')+'</div>':'';
+    const form=currentSlot?'<form id="venueRatingForm"><div class="form-grid"><label>Your score<select name="score" required><option value="">Choose a score</option>'+
+    Array.from({length:9},(_,i)=>(i+2)/2).map(n=>'<option value="'+n+'" '+(Number(r.own?.score)===n?'selected':'')+'>'+n.toFixed(1)+' / 5</option>').join('')+
+    '</select></label><label>Personal impression (optional)<textarea name="notes" rows="2" placeholder="What matters to you?">'+safe(r.own?.notes||'')+'</textarea></label></div>'+
+    '<div class="rating-actions"><button class="action dark" type="submit">Save my rating</button>'+
+    (r.own?'<button class="action outline" type="button" id="removeMyRating">Remove my rating</button>':'')+'</div></form>':
+    '<p class="rating-signin-help">Link your account to your name before rating. If your name is already linked to another login, ask the organizer to review your account.</p>';
+    return '<section class="venue-detail-rating"><div class="rating-header"><div><span class="eyebrow">FOUR INDIVIDUAL IMPRESSIONS</span><h3>How do we each feel?</h3></div>'+
+    '<span class="venue-rating-average">'+(r.avg===null?'No ratings yet':'★ '+r.avg.toFixed(1)+'/5 average · '+r.r.length+' rated')+'</span></div>'+
+    '<div class="rating-roster">'+cards+'</div>'+claim+form+'</section>';
+  }
+  async function claimRatingRole(personKey){
+    const {db,session,workspace}=getContext();
+    if(!db||!session||!workspace||ratingSlots.some(s=>s.user_id===session.user.id))return;
+    const slot=ratingSlots.find(s=>s.person_key===personKey&&!s.user_id);
+    if(!slot||!confirm('Connect this login to '+slot.display_name+' ('+slot.family_role+')? Only claim your own name.'))return;
+    const {data,error}=await db.from('wedding_rating_slots').update({user_id:session.user.id})
+      .eq('workspace_id',workspace.id).eq('person_key',personKey).is('user_id',null).select('person_key').maybeSingle();
+    if(error){report(error);return;}
+    if(!data){report(new Error('This name was claimed on another device; refresh the page.'));return;}
+    notify('Rating identity linked to '+slot.display_name+'.');await reload();
+  }
   function renderDetails(v){
     const c=calculate(v),r=ratingsFor(v),website=validUrl(v.website);
     $('#venueDetailTitle').textContent=v.name;
@@ -142,10 +176,12 @@
       infoGroup('Guest experience & space',[line('Ceremony capacity',v.ceremony_capacity),line('Seated dinner capacity',v.seated_dinner_capacity),line('Sleeps on site',v.on_site_sleeping_capacity),line('Indoor backup',yesNo(v.indoor_backup)),line('Rain plan',v.rain_plan)])+
       infoGroup('Services & restrictions',[line('Coordination',formatted(v,'coordination_type')),line('Outside vendors',formatted(v,'external_vendor_policy')),line('Outside vendors planned',yesNo(v.external_vendors_planned)),line('Venue inclusions',v.venue_inclusions),line('Curfew',v.curfew_time?.slice(0,5)||'—'),line('Noise / restrictions',v.noise_restrictions)])+
       infoGroup('Our notes',[line('Previous shared score',formatted(v,'rating')),line('What we love',v.pros),line('Tradeoffs',v.cons),line('Other notes',v.notes)])+'</div>';
-    const ratingsHTML='<section class="venue-detail-rating"><div class="rating-header"><div><span class="eyebrow">OUR INDIVIDUAL IMPRESSIONS</span><h3>How do we each feel?</h3></div><span class="venue-rating-average">'+(r.avg===null?'No ratings yet':'★ '+r.avg.toFixed(1)+'/5 combined')+'</span></div><div class="rating-couple"><div><span class="rating-caption">Your rating</span><strong>'+(r.own?safe(r.own.score)+'/5':'Not rated')+'</strong>'+(r.own?.notes?'<p>'+safe(r.own.notes)+'</p>':'')+'</div><div><span class="rating-caption">Partner'+(r.other.length>1?'s':'')+' rating</span><strong>'+(r.other.length?r.other.map(x=>safe(x.score)+'/5').join(', '):'Not rated')+'</strong>'+r.other.map(x=>x.notes?'<p>'+safe(x.notes)+'</p>':'').join('')+'</div></div><form id="venueRatingForm"><div class="form-grid"><label>Your score<select name="score" required><option value="">Choose a score</option>'+Array.from({length:9},(_,i)=>(i+2)/2).map(n=>'<option value="'+n+'" '+(Number(r.own?.score)===n?'selected':'')+'>'+n.toFixed(1)+' / 5</option>').join('')+'</select></label><label>Personal impression (optional)<textarea name="notes" rows="2" placeholder="What matters to you?">'+safe(r.own?.notes||'')+'</textarea></label></div><div class="rating-actions"><button class="action dark" type="submit">Save my rating</button>'+(r.own?'<button class="action outline" type="button" id="removeMyRating">Remove my rating</button>':'')+'</div></form></section>';
-    $('#venueDetailBody').innerHTML=header+cost+details+ratingsHTML;
+    const ratingsHTML=rosterRatingHTML(v,r);
+    $('#venueDetailBody').innerHTML=header+window.VenueGallery.detailMarkup(v)+cost+details+ratingsHTML;
+    window.VenueGallery.bindDetails(v);
     const img=$('#venueDetailBody .venue-detail-hero img');if(img)img.addEventListener('error',()=>img.replaceWith(Object.assign(document.createElement('span'),{className:'venue-hero-placeholder',textContent:'✧'})));
-    $('#venueRatingForm').addEventListener('submit',saveRating);$('#removeMyRating')?.addEventListener('click',removeRating);
+    $('#venueRatingForm')?.addEventListener('submit',saveRating);$('#removeMyRating')?.addEventListener('click',removeRating);
+    $('#venueDetailBody').querySelectorAll('[data-claim-person]').forEach(b=>b.addEventListener('click',()=>claimRatingRole(b.dataset.claimPerson)));
   }
   function openDetails(v){selected=v;renderDetails(v);$('#venueDetailDialog').showModal();}
   function openEdit(v){editing=v;$('#venueForm').reset();$('#dialogTitle').textContent=v?'Edit venue':'Add a venue';$('#venueDelete').classList.toggle('hidden',!v);
@@ -176,6 +212,7 @@
     if(error){report(error);return;}$('#venueDialog').close();$('#venueDetailDialog').close();selected=null;notify('Venue deleted.');await reload();
   }
   async function saveRating(e){e.preventDefault();const {db,session,workspace}=getContext();if(!selected||!session||!workspace)return;
+    if(!ratingSlots.some(s=>s.user_id===session.user.id)){report(new Error('Link your account to your rating name first.'));return;}
     const form=e.currentTarget;const btn=form.querySelector('[type="submit"]');btn.disabled=true;
     const score=Number(form.elements.namedItem('score').value), notes=form.elements.namedItem('notes').value.trim();
     if(!score){btn.disabled=false;return;}
