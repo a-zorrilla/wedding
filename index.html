@@ -97,6 +97,16 @@
     <div class="venue-view-switch" aria-label="Venue display mode" role="group"><button id="venueCardsMode" type="button" aria-pressed="true">▦ Cards</button><button id="venueTableMode" type="button" aria-pressed="false">☷ Table</button></div>
     <button class="action outline" id="venueExport" type="button">Export CSV</button><button class="action outline" id="venueRefresh" type="button">↻ Refresh</button>
   </div>
+  <div class="venue-refine" role="group" aria-label="Refine venue results">
+  <span class="venue-filter-label">Refine by</span>
+  <select id="venueCountryFilter" aria-label="Filter by country"><option value="">All countries</option><option value="IT">🇮🇹 Italy</option><option value="CO">🇨🇴 Colombia</option><option value="PT">🇵🇹 Portugal</option></select>
+  <select id="venueRatingFilter" aria-label="Filter by couple rating"><option value="">Any rating</option><option value="4">★ 4+ average</option><option value="3">★ 3+ average</option><option value="both">Both rated</option><option value="unrated">Not yet rated</option></select>
+  <select id="venueCapacityFilter" aria-label="Filter by dinner capacity"><option value="">Any dinner capacity</option><option value="100">Fits 100+ guests</option><option value="150">Fits 150+ guests</option><option value="200">Fits 200+ guests</option><option value="unknown">Capacity unknown</option></select>
+  <select id="venueRainFilter" aria-label="Filter by rain backup"><option value="">Any rain plan</option><option value="yes">Indoor backup confirmed</option><option value="no">No indoor backup</option><option value="unknown">Rain backup unknown</option></select>
+  <select id="venuePhotoFilter" aria-label="Filter by venue photograph"><option value="">All photo statuses</option><option value="has">With photo link</option><option value="missing">Needs a photo</option></select>
+  <button type="button" class="venue-clear-filters" id="venueClearFilters">Clear filters</button>
+  <span id="venueResultCount" class="venue-filter-count" aria-live="polite"></span>
+  </div>
   <p class="venue-guidance">Costs use each venue's planning headcount (default 100). Unknown fees are never assumed to be zero; incomplete estimates are marked <strong>Partial</strong>. Select a venue to see the full breakdown.</p>
   <div id="venueCards" class="venue-grid"></div>
   <div id="venueTableWrap" class="venue-table-wrap hidden" tabindex="0" role="region" aria-label="All venue data comparison table, scroll horizontally"><table id="venueTable" class="venue-data-table"></table></div>
@@ -118,7 +128,7 @@
   <p class="venue-form-intro">Fill in what you know; unknown details can stay blank. Costs will update as you find out more.</p>
   <fieldset class="venue-form-group"><legend><span>01</span> Basics &amp; availability</legend><div class="form-grid">
     <label>Venue name *<input name="name" maxlength="200" required placeholder="Venue or property name"></label>
-    <label>Location<input name="location" placeholder="City, region, country"></label>
+    <label>Location<input name="location" placeholder="City, region, country"></label><label>Country<select name="country_code"><option value="">Not specified</option><option value="IT">🇮🇹 Italy</option><option value="CO">🇨🇴 Colombia</option><option value="PT">🇵🇹 Portugal</option></select></label>
     <label>Website<input name="website" type="url" placeholder="https://..."></label>
     <label>Photo URL<input name="image_url" type="url" placeholder="https://…jpg (optional)"></label>
     <label>Contact information<input name="contact" placeholder="Coordinator, email, phone"></label>
