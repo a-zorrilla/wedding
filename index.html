@@ -67,9 +67,9 @@ footer{text-align:center;color:#819086;font-size:12px;margin-top:30px}
 <div class="form-actions"><button type="button" class="danger hide" id="deleteVenue">Delete venue</button><button type="submit" id="saveVenue">Save venue</button></div></form></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
 <script>
-const URL='https://iorausxqwrlggudtklib.supabase.co';
+const SUPABASE_URL='https://iorausxqwrlggudtklib.supabase.co';
 const KEY='sb_publishable_mhqtMUMxfjCKM9AHOVgXgg_pBCmBcNU';
-const db=window.supabase.createClient(URL,KEY);
+const db=window.supabase.createClient(SUPABASE_URL,KEY);
 const $=s=>document.querySelector(s);
 let session=null,workspace=null,venues=[],editing=null,channel=null;
 const fields=['name','location','website','contact','capacity','estimated_cost','status','rating','pros','cons','notes','tour_date'];
