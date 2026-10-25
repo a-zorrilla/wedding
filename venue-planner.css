@@ -45,3 +45,11 @@
 @media(max-width:1200px){.venue-tools-v2{grid-template-columns:1.5fr 1fr 1fr auto;}.venue-tools-v2 .venue-view-switch{grid-column:1/2}.venue-tools-v2 #venueExport,.venue-tools-v2 #venueRefresh{justify-self:start}}
 @media(max-width:850px){.venue-tools-v2{grid-template-columns:1fr 1fr}.venue-detail-columns{grid-template-columns:1fr}.venue-detail-hero{grid-template-columns:1fr 1fr}}
 @media(max-width:570px){.venue-tools-v2{grid-template-columns:1fr}.venue-tools-v2 .venue-view-switch{grid-column:1;justify-content:stretch}.venue-view-switch button{flex:1}.venue-detail-hero{grid-template-columns:1fr}.venue-detail-hero img,.venue-hero-placeholder{height:180px}.venue-detail-hero-copy{padding:15px}.venue-detail-row{grid-template-columns:1fr;gap:2px}.cost-total strong{font-size:26px}.rating-couple{grid-template-columns:1fr}.form-cost-preview{flex-direction:column;align-items:flex-start}.venue-form-group{padding:13px}.venue-form-group legend{font-size:19px}}
+/* Shared country markers + multi-dimensional venue filters */
+.venue-refine{display:flex;flex-wrap:wrap;align-items:center;gap:9px 10px;margin:-9px 0 22px;padding:14px 16px;background:#fffcf4;border:1px solid #e7e4d7;border-radius:13px}
+.venue-filter-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:#738171;margin-right:2px}
+.venue-refine select{width:auto;min-width:145px;max-width:220px;border:1px solid #dddccd;border-radius:8px;padding:9px 29px 9px 10px;color:#34543e;font-size:12px;background:#fff;min-height:38px}
+.venue-clear-filters{border:0;border-bottom:1px solid #8a9a83;background:transparent;border-radius:0;color:#4a6a51;font-size:12px;font-weight:800;padding:5px 2px}
+.venue-filter-count{margin-left:auto;font-size:12px;color:#768478;font-weight:700;white-space:nowrap}
+.venue-country-flag{position:absolute;right:14px;top:14px;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:40px;background:#fffcf2ed;color:#365742;font-size:11px;font-weight:750;box-shadow:0 2px 14px #0002;white-space:nowrap}
+@media(max-width:710px){.venue-refine select{flex:1 1 165px;min-width:0;max-width:none}.venue-filter-count{margin-left:0;width:100%}}
