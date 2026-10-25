@@ -3,7 +3,7 @@
   'use strict';
   const $ = selector => document.querySelector(selector);
   const safe = v => String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-  const cash = n => n == null || !Number.isFinite(Number(n)) ? '—' : new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(n));
+  const cash = (n,currency='USD') => n == null || !Number.isFinite(Number(n)) ? '—' : new Intl.NumberFormat('en-US',{style:'currency',currency,maximumFractionDigits:0}).format(Number(n));
   const num = n => n == null || n === '' || !Number.isFinite(Number(n)) ? null : Number(n);
   const shown = v => v == null || v === '' ? '—' : String(v);
   const yesNo = v => v === null || v === undefined || v === '' ? 'Unknown' : v === true || v === 'true' ? 'Yes' : 'No';
@@ -15,39 +15,46 @@
     external_vendor_policy:{unknown:'Unknown',allowed:'Allowed',restricted:'Restricted',not_allowed:'Not allowed'},
     site_fee_treatment:{additional:'Additional to F&B',credited_to_fnb:'Credited to F&B',included_in_fnb:'Included in F&B'}
   };
-  const NUMBERS = ['guest_count','airport_transfer_minutes','accommodation_transfer_minutes','nearby_hotel_rooms','on_site_sleeping_capacity','ceremony_capacity','seated_dinner_capacity','site_fee','food_beverage_minimum','food_beverage_per_guest','food_beverage_quote','service_charge_pct','tax_pct','external_vendor_fee','additional_fees','outside_vendor_budget','other_wedding_costs','quoted_total'];
+  const NUMBERS = ['guest_count','airport_transfer_minutes','accommodation_transfer_minutes','nearby_hotel_rooms','on_site_sleeping_capacity','ceremony_capacity','seated_dinner_capacity','site_fee','food_beverage_minimum','food_beverage_per_guest','food_beverage_quote','food_minimum','food_per_guest','food_quote','beverage_minimum','beverage_per_guest','beverage_quote','service_charge_pct','tax_pct','external_vendor_fee','additional_fees','outside_vendor_budget','other_wedding_costs','quoted_total'];
   const BOOLEANS = ['indoor_backup','external_vendors_planned'];
-  const EDITABLE = ['name','location','website','image_url','contact','status','tour_date','availability_notes','closest_airport','airport_transfer_minutes','accommodation_transfer_minutes','nearby_hotel_rooms','on_site_sleeping_capacity','ceremony_capacity','seated_dinner_capacity','indoor_backup','rain_plan','coordination_type','external_vendor_policy','external_vendors_planned','curfew_time','venue_inclusions','noise_restrictions','guest_count','site_fee','site_fee_treatment','food_beverage_minimum','food_beverage_per_guest','food_beverage_quote','service_charge_pct','tax_pct','external_vendor_fee','additional_fees','additional_fees_description','outside_vendor_budget','other_wedding_costs','quoted_total','pros','cons','notes'];
+  const EDITABLE = ['name','location','website','image_url','contact','status','tour_date','availability_notes','closest_airport','airport_transfer_minutes','accommodation_transfer_minutes','nearby_hotel_rooms','on_site_sleeping_capacity','ceremony_capacity','seated_dinner_capacity','indoor_backup','rain_plan','coordination_type','external_vendor_policy','external_vendors_planned','curfew_time','venue_inclusions','noise_restrictions','guest_count','currency','site_fee','site_fee_treatment','food_beverage_minimum','food_beverage_per_guest','food_beverage_quote','service_charge_pct','tax_pct','external_vendor_fee','additional_fees','additional_fees_description','outside_vendor_budget','other_wedding_costs','quoted_total','pros','cons','notes'];
   const TABLE_GROUPS = [
     {name:'Overview',items:[['name','Venue'],['status','Status'],['location','Location'],['image_url','Photo URL'],['website','Website'],['contact','Contact'],['availability_notes','Availability'],['tour_date','Tour date']]},
     {name:'Travel & capacity',items:[['closest_airport','Airport'],['airport_transfer_minutes','Airport min'],['accommodation_transfer_minutes','Hotel min'],['nearby_hotel_rooms','Hotel rooms nearby'],['on_site_sleeping_capacity','Sleeps on site'],['ceremony_capacity','Ceremony seats'],['seated_dinner_capacity','Dinner seats'],['indoor_backup','Indoor backup'],['rain_plan','Rain plan']]},
     {name:'Services & rules',items:[['coordination_type','Coordination'],['external_vendor_policy','Outside vendors'],['external_vendors_planned','Use outside vendors?'],['venue_inclusions','Included'],['curfew_time','Curfew'],['noise_restrictions','Restrictions']]},
-    {name:'Wedding budget',items:[['guest_count','Planning guests'],['site_fee','Site fee'],['site_fee_treatment','Site fee treatment'],['food_beverage_minimum','F&B minimum'],['food_beverage_per_guest','F&B per guest'],['food_beverage_quote','F&B quote'],['service_charge_pct','Service %'],['tax_pct','Tax %'],['external_vendor_fee','Outside vendor fee'],['additional_fees','Venue extras'],['additional_fees_description','Extra fee details'],['outside_vendor_budget','Outside suppliers'],['other_wedding_costs','Other costs'],['quoted_total','All-in quote'],['_total','Estimated total'],['_per_guest','Cost per guest'],['_cost_status','Estimate status']]},
+    {name:'Wedding budget',items:[['guest_count','Planning guests'],['currency','Currency'],['site_fee','Site fee'],['site_fee_treatment','Site fee treatment'],['food_beverage_minimum','F&B minimum'],['food_beverage_per_guest','F&B per guest'],['food_beverage_quote','Combined F&B quote (legacy)'],['food_minimum','Food minimum'],['food_per_guest','Food/guest'],['food_quote','Food quote'],['beverage_minimum','Drinks minimum'],['beverage_per_guest','Drinks/guest'],['beverage_quote','Drinks quote'],['service_charge_pct','Service %'],['tax_pct','Tax %'],['external_vendor_fee','Outside vendor fee'],['additional_fees','Venue extras'],['additional_fees_description','Extra fee details'],['outside_vendor_budget','Outside suppliers'],['other_wedding_costs','Other costs'],['quoted_total','All-in quote'],['_total','Estimated total'],['_per_guest','Cost per guest'],['_cost_status','Estimate status']]},
     {name:'Our notes & ratings',items:[['_your_rating','Your rating'],['_partner_rating','Partner rating'],['_average_rating','Average rating'],['rating','Previous shared score'],['pros','Pros'],['cons','Cons'],['notes','Notes']]}
   ];
   let context = () => ({}), reload = async () => {}, report = console.error, notify = () => {};
   let venues = [], ratings = [], selected = null, editing = null, mode = localStorage.getItem('wedding-venue-mode') === 'table' ? 'table' : 'cards';
   const getContext = () => context();
   function calculate(v) {
-    const guests = num(v.guest_count) || 100;
-    const has = field => num(v[field]) !== null;
-    const fbInput = has('food_beverage_quote') ? num(v.food_beverage_quote) : has('food_beverage_per_guest') ? num(v.food_beverage_per_guest) * guests : null;
-    const minimum = num(v.food_beverage_minimum);
-    const fb = fbInput == null ? minimum : Math.max(fbInput, minimum ?? 0);
-    const rental = num(v.site_fee);
-    const treatment = v.site_fee_treatment || 'additional';
-    const rentalDue = treatment === 'included_in_fnb' ? 0 : treatment === 'credited_to_fnb' ? Math.max(0,(rental || 0)-(fb || 0)) : rental || 0;
-    const service = fb == null || !has('service_charge_pct') ? null : fb * num(v.service_charge_pct) / 100;
-    const tax = fb == null || !has('tax_pct') ? null : (rentalDue + fb + (service || 0)) * num(v.tax_pct) / 100;
-    const vendor = v.external_vendors_planned === true || v.external_vendors_planned === 'true' ? (num(v.external_vendor_fee) || 0) : 0;
-    const fixed = (num(v.additional_fees)||0) + (num(v.outside_vendor_budget)||0) + (num(v.other_wedding_costs)||0) + vendor;
-    const hasCosts = ['site_fee','food_beverage_minimum','food_beverage_per_guest','food_beverage_quote','external_vendor_fee','additional_fees','outside_vendor_budget','other_wedding_costs'].some(has);
-    const manual = num(v.quoted_total);
-    const estimated = manual !== null ? manual : hasCosts ? rentalDue + (fb||0) + (service||0) + (tax||0) + fixed : null;
-    const incomplete = manual === null && (fb === null || (rental === null && treatment !== 'included_in_fnb') || !has('service_charge_pct') || !has('tax_pct') || (v.external_vendors_planned == null && has('external_vendor_fee')));
-    return {guests,fb,fbInput,minimum,rental,rentalDue,service,tax,vendor,fixed,total:estimated,perGuest:estimated === null ? null : estimated/guests,
-      label:manual !== null ? 'All-in quote' : !hasCosts ? 'Not priced' : incomplete ? 'Partial estimate' : 'Planning estimate', incomplete, manual,
-      breakdown:[['Site fee due',rentalDue],['Food & beverage',fb],['Service charge',service],['Estimated tax',tax],['Outside vendor fee',vendor],['Other venue fees',num(v.additional_fees)],['Outside supplier budget',num(v.outside_vendor_budget)],['Other wedding costs',num(v.other_wedding_costs)]]};
+    const guests=num(v.guest_count)||100,has=k=>num(v[k])!==null;
+    const fk=['food_minimum','food_per_guest','food_quote'],bk=['beverage_minimum','beverage_per_guest','beverage_quote'];
+    const split=[...fk,...bk].some(has);
+    const component=name=>{
+      const quote=has(name+'_quote')?num(v[name+'_quote']):has(name+'_per_guest')?num(v[name+'_per_guest'])*guests:null;
+      const min=num(v[name+'_minimum']);
+      return quote===null&&min===null?null:Math.max(quote||0,min||0);
+    };
+    const food=component('food'),beverage=component('beverage');
+    const fbInput=has('food_beverage_quote')?num(v.food_beverage_quote):has('food_beverage_per_guest')?num(v.food_beverage_per_guest)*guests:null;
+    const minimum=num(v.food_beverage_minimum);
+    const fb=split?Math.max((food||0)+(beverage||0),minimum||0):fbInput===null&&minimum===null?null:Math.max(fbInput||0,minimum||0);
+    const topUp=split?Math.max(0,(minimum||0)-(food||0)-(beverage||0)):0;
+    const rental=num(v.site_fee),treatment=v.site_fee_treatment||'additional';
+    const rentalDue=treatment==='included_in_fnb'?0:treatment==='credited_to_fnb'?Math.max(0,(rental||0)-(fb||0)):rental||0;
+    const service=fb===null||!has('service_charge_pct')?null:fb*num(v.service_charge_pct)/100;
+    const tax=fb===null||!has('tax_pct')?null:(rentalDue+fb+(service||0))*num(v.tax_pct)/100;
+    const vendor=v.external_vendors_planned===true||v.external_vendors_planned==='true'?(num(v.external_vendor_fee)||0):0;
+    const fixed=(num(v.additional_fees)||0)+(num(v.outside_vendor_budget)||0)+(num(v.other_wedding_costs)||0)+vendor;
+    const hasCosts=['site_fee','food_beverage_minimum','food_beverage_per_guest','food_beverage_quote',...fk,...bk,'external_vendor_fee','additional_fees','outside_vendor_budget','other_wedding_costs'].some(has);
+    const manual=num(v.quoted_total);
+    const total=manual!==null?manual:hasCosts?rentalDue+(fb||0)+(service||0)+(tax||0)+fixed:null;
+    const incomplete=manual===null&&((split?(food===null||beverage===null):fb===null)||(rental===null&&treatment!=='included_in_fnb')||!has('service_charge_pct')||!has('tax_pct')||(v.external_vendors_planned==null&&has('external_vendor_fee')));
+    const breakdown=[['Site fee due',rentalDue],...(split?[['Food',food],['Beverages',beverage],['Combined minimum top-up',topUp||null]]:[['Food & beverage (legacy combined)',fb]]),['Service charge',service],['Estimated tax',tax],['Outside vendor fee',vendor],['Other venue fees',num(v.additional_fees)],['Outside supplier budget',num(v.outside_vendor_budget)],['Other wedding costs',num(v.other_wedding_costs)]];
+    return {guests,food,beverage,split,fb,fbInput,minimum,rental,rentalDue,service,tax,vendor,fixed,total,perGuest:total===null?null:total/guests,
+      label:manual!==null?'All-in quote':!hasCosts?'Not priced':incomplete?'Partial estimate':'Planning estimate',incomplete,manual,breakdown};
   }
   function ratingsFor(v){ const r=ratings.filter(x=>x.venue_id === v.id);const me=getContext().session?.user?.id;const own=r.find(x=>x.user_id===me);const other=r.filter(x=>x.user_id!==me);const avg=r.length ? r.reduce((s,x)=>s+Number(x.score),0)/r.length : null;return {r,own,other,avg};}
   const average = v => ratingsFor(v).avg;
@@ -60,13 +67,13 @@
     const c=calculate(v), rating=ratingsFor(v), img=photo(v);
     const el=document.createElement('article');el.className='venue-card venue-visual-card';
     const frame='<div class="venue-image">'+(img?'<img src="'+safe(img)+'" alt="Photo of '+safe(v.name)+'" loading="lazy" referrerpolicy="no-referrer">':'')+'<div class="venue-no-image" '+(img?'hidden':'')+'><span aria-hidden="true">✧</span><small>PHOTO NOT ADDED</small></div><span class="venue-image-badge">'+safe(v.status)+'</span></div>';
-    el.innerHTML=frame+'<div class="venue-card-interior"><div class="venue-card-heading"><h3>'+safe(v.name)+'</h3><span class="venue-rating">'+(rating.avg===null?'☆ Unrated':'★ '+rating.avg.toFixed(1))+'</span></div><div class="venue-location">⌖ '+safe(v.location||'Location to confirm')+'</div><div class="venue-card-chips"><span>'+safe(shown(v.seated_dinner_capacity))+' dinner guests</span><span>'+(v.indoor_backup===true?'Indoor backup ✓':v.indoor_backup===false?'No indoor backup':'Rain plan TBD')+'</span></div><div class="venue-card-prices"><div><small>'+safe(c.label)+'</small><strong>'+(c.total!==null?cash(c.total):'Cost TBD')+'</strong></div><div><small>Per guest · '+c.guests+'</small><strong>'+cash(c.perGuest)+'</strong></div></div><button class="action dark venue-open-detail" type="button">View venue &amp; costs ↗</button></div>';
+    el.innerHTML=frame+'<div class="venue-card-interior"><div class="venue-card-heading"><h3>'+safe(v.name)+'</h3><span class="venue-rating">'+(rating.avg===null?'☆ Unrated':'★ '+rating.avg.toFixed(1))+'</span></div><div class="venue-location">⌖ '+safe(v.location||'Location to confirm')+'</div><div class="venue-card-chips"><span>'+safe(shown(v.seated_dinner_capacity))+' dinner guests</span><span>'+(v.indoor_backup===true?'Indoor backup ✓':v.indoor_backup===false?'No indoor backup':'Rain plan TBD')+'</span></div><div class="venue-card-prices"><div><small>'+safe(c.label)+'</small><strong>'+(c.total!==null?cash(c.total,v.currency):'Cost TBD')+'</strong></div><div><small>Per guest · '+c.guests+'</small><strong>'+cash(c.perGuest,v.currency)+'</strong></div></div><button class="action dark venue-open-detail" type="button">View venue &amp; costs ↗</button></div>';
     const image=el.querySelector('img'); if(image)image.addEventListener('error',()=>{image.remove();el.querySelector('.venue-no-image').hidden=false;});
     el.querySelector('button').addEventListener('click',()=>openDetails(v));return el;
   }
   function formatted(v,key){const c=calculate(v),r=ratingsFor(v);
-    if(key==='_total')return c.total==null?'—':cash(c.total);
-    if(key==='_per_guest')return cash(c.perGuest);
+    if(key==='_total')return c.total==null?'—':cash(c.total,v.currency);
+    if(key==='_per_guest')return cash(c.perGuest,v.currency);
     if(key==='_cost_status')return c.label;
     if(key==='_your_rating')return r.own?String(r.own.score)+'/5':'—';
     if(key==='_partner_rating')return r.other.length?r.other.map(x=>x.score+'/5').join(', '):'—';
@@ -74,7 +81,7 @@
     if(key==='rating')return num(v.rating)===null?'—':v.rating+'/5';
     if(BOOLEANS.includes(key))return yesNo(v[key]);
     if(enumLabels[key])return enumLabels[key][v[key]]||'Unknown';
-    if(['site_fee','food_beverage_minimum','food_beverage_per_guest','food_beverage_quote','external_vendor_fee','additional_fees','outside_vendor_budget','other_wedding_costs','quoted_total'].includes(key))return cash(v[key]);
+    if(['site_fee','food_beverage_minimum','food_beverage_per_guest','food_beverage_quote','food_minimum','food_per_guest','food_quote','beverage_minimum','beverage_per_guest','beverage_quote','external_vendor_fee','additional_fees','outside_vendor_budget','other_wedding_costs','quoted_total'].includes(key))return cash(v[key],v.currency);
     if(['tax_pct','service_charge_pct'].includes(key))return num(v[key])===null?'—':v[key]+'%';
     if(key==='website'||key==='image_url')return shown(v[key]);
     return shown(v[key]);
@@ -99,8 +106,8 @@
     $('#venueDetailTitle').textContent=v.name;
     const image=photo(v);
     const header='<div class="venue-detail-hero">'+(image?'<img alt="Photo of '+safe(v.name)+'" src="'+safe(image)+'" loading="lazy" referrerpolicy="no-referrer">':'<span class="venue-hero-placeholder">✧</span>')+'<div class="venue-detail-hero-copy"><span class="venue-pill">'+safe(v.status)+'</span><h3>'+safe(v.location||'Location not yet entered')+'</h3>'+(website?'<a href="'+safe(website)+'" target="_blank" rel="noopener noreferrer">Open venue website ↗</a>':'')+'</div></div>';
-    const costRows=c.breakdown.map(([label,val])=>line(label,cash(val)));
-    let cost='<section class="venue-detail-cost"><div class="cost-total"><div><small>'+safe(c.label)+' · '+c.guests+' planning guests</small><strong>'+(c.total===null?'Not yet priced':cash(c.total))+'</strong></div><div><small>Estimated cost / guest</small><strong>'+cash(c.perGuest)+'</strong></div></div><p class="cost-explanation">'+(c.manual!==null?'Based on the all-in quote entered. The component breakdown below is for reference only and is not added to the quoted total.':c.incomplete?'Partial figure only. Missing fees, tax, service or unconfirmed expenses may increase the real total.':'Planning estimate, not a binding quote. Confirm what is included, tax treatment and possible extras with the venue.')+'</p><details open><summary>Cost components &amp; assumptions</summary><dl>'+costRows.join('')+line('Food & beverage minimum',cash(v.food_beverage_minimum))+line('Food & beverage per guest',cash(v.food_beverage_per_guest))+line('F&B quote',cash(v.food_beverage_quote))+line('Site-fee treatment',formatted(v,'site_fee_treatment'))+line('Service rate',formatted(v,'service_charge_pct'))+line('Tax rate',formatted(v,'tax_pct'))+line('Outside vendors planned',yesNo(v.external_vendors_planned))+line('Extra fee details',v.additional_fees_description)+'</dl></details></section>';
+    const costRows=c.breakdown.map(([label,val])=>line(label,cash(val,v.currency)));
+    let cost='<section class="venue-detail-cost"><div class="cost-total"><div><small>'+safe(c.label)+' · '+c.guests+' planning guests</small><strong>'+(c.total===null?'Not yet priced':cash(c.total,v.currency))+'</strong></div><div><small>Estimated cost / guest</small><strong>'+cash(c.perGuest,v.currency)+'</strong></div></div><p class="cost-explanation">'+(c.manual!==null?'Based on the all-in quote entered. The component breakdown below is for reference only and is not added to the quoted total.':c.incomplete?'Partial figure only. Missing fees, tax, service or unconfirmed expenses may increase the real total.':'Planning estimate, not a binding quote. Confirm what is included, tax treatment and possible extras with the venue.')+'</p><details open><summary>Cost components &amp; assumptions</summary><dl>'+costRows.join('')+line('Combined F&B minimum (legacy)',cash(v.food_beverage_minimum,v.currency))+line('Combined F&B per guest (legacy)',cash(v.food_beverage_per_guest,v.currency))+line('Combined F&B quote (legacy)',cash(v.food_beverage_quote,v.currency))+line('Food minimum',cash(v.food_minimum,v.currency))+line('Food per guest',cash(v.food_per_guest,v.currency))+line('Food quote',cash(v.food_quote,v.currency))+line('Beverage minimum',cash(v.beverage_minimum,v.currency))+line('Beverage per guest',cash(v.beverage_per_guest,v.currency))+line('Beverage quote',cash(v.beverage_quote,v.currency))+line('Site-fee treatment',formatted(v,'site_fee_treatment'))+line('Service rate',formatted(v,'service_charge_pct'))+line('Tax rate',formatted(v,'tax_pct'))+line('Outside vendors planned',yesNo(v.external_vendors_planned))+line('Extra fee details',v.additional_fees_description)+'</dl></details></section>';
     const links = (website?'<a href="'+safe(website)+'" target="_blank" rel="noopener noreferrer">Website ↗</a>':'');
     const details='<div class="venue-detail-columns">'+
       infoGroup('Location & availability',[line('Website',links||'—',{raw:true}),line('Contact',v.contact),line('Availability',v.availability_notes),line('Tour date',v.tour_date),line('Closest airport',v.closest_airport),line('Airport transfer',v.airport_transfer_minutes == null?'—':v.airport_transfer_minutes+' min'),line('Nearest hotels',v.accommodation_transfer_minutes==null?'—':v.accommodation_transfer_minutes+' min'),line('Nearby hotel rooms',v.nearby_hotel_rooms)])+
@@ -114,7 +121,7 @@
   }
   function openDetails(v){selected=v;renderDetails(v);$('#venueDetailDialog').showModal();}
   function openEdit(v){editing=v;$('#venueForm').reset();$('#dialogTitle').textContent=v?'Edit venue':'Add a venue';$('#venueDelete').classList.toggle('hidden',!v);
-    for(const name of EDITABLE){const input=$('#venueForm').elements.namedItem(name);if(!input)continue;const value=v?.[name];input.value=BOOLEANS.includes(name)?(value==null?'':String(value)):(value ?? ({guest_count:100,status:'Researching',coordination_type:'unknown',external_vendor_policy:'unknown',site_fee_treatment:'additional'}[name] ?? ''));}
+    for(const name of EDITABLE){const input=$('#venueForm').elements.namedItem(name);if(!input)continue;const value=v?.[name];input.value=BOOLEANS.includes(name)?(value==null?'':String(value)):(value ?? ({guest_count:100,status:'Researching',coordination_type:'unknown',external_vendor_policy:'unknown',site_fee_treatment:'additional',currency:'USD'}[name] ?? ''));}
     if(!v){$('#venueForm').elements.namedItem('site_fee_treatment').value='additional';}
     updateFormPreview();$('#venueDialog').showModal();
   }
@@ -125,7 +132,7 @@
     return o;
   }
   function updateFormPreview(){let v;try{v=readForm();}catch{$('#venueFormEstimate').textContent='Enter a guest count and costs to calculate your estimate.';return;}
-    const c=calculate(v);$('#venueFormEstimate').innerHTML='<div><small>'+safe(c.label)+'</small><strong>'+(c.total===null?'Cost not yet entered':cash(c.total))+'</strong></div><div><small>Cost per guest</small><strong>'+cash(c.perGuest)+'</strong></div><p>'+(c.incomplete?'Missing cost details may increase the actual total.':'Figures are estimates until confirmed with a venue quote.')+'</p>';
+    const c=calculate(v);$('#venueFormEstimate').innerHTML='<div><small>'+safe(c.label)+'</small><strong>'+(c.total===null?'Cost not yet entered':cash(c.total,v.currency))+'</strong></div><div><small>Cost per guest</small><strong>'+cash(c.perGuest,v.currency)+'</strong></div><p>'+(c.incomplete?'Missing cost details may increase the actual total.':'Figures are estimates until confirmed with a venue quote.')+'</p>';
   }
   async function saveVenue(e){e.preventDefault();const {db,workspace}=getContext();if(!workspace)return;
     let values;try{values=readForm();}catch(error){report(error);return;}
