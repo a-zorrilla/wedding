@@ -1,121 +1,103 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Wedding Venue Tracker</title>
-<style>
-:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#28342e;background:#f7f7f3;font-synthesis:none}
-*{box-sizing:border-box}body{margin:0}button,input,textarea,select{font:inherit}button{cursor:pointer}
-header{background:#24463d;color:white;padding:22px max(24px,calc((100vw - 1200px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
-header h1{font-family:Georgia,serif;font-size:26px;margin:0}header small{color:#d8e6df}
-main{max-width:1200px;margin:32px auto;padding:0 20px 60px}
-.panel{background:#fff;border:1px solid #e2e7e1;box-shadow:0 5px 24px #24463d09;border-radius:15px;padding:25px;margin-bottom:22px}
-h2{font-family:Georgia,serif;font-size:24px;margin:0 0 15px}h3{margin:0}
-.muted{color:#66756b} .hide{display:none!important}
-.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
-button{border:0;background:#24463d;color:white;padding:11px 17px;border-radius:9px;font-weight:600}button:hover{opacity:.9}
-button.secondary{background:#edf2ed;color:#24463d}button.danger{background:#a33b32}button.outline{background:#fff;border:1px solid #ccd7cc;color:#24463d}
-input,select,textarea{border:1px solid #ccd7cc;border-radius:9px;padding:11px 12px;width:100%;background:white;color:#293b32}
-textarea{min-height:96px;resize:vertical}
-label{font-size:13px;font-weight:650;color:#495c50;display:block;margin-bottom:6px}
-.field{min-width:0}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.stat{background:#fff;border:1px solid #e2e7e1;border-radius:13px;padding:19px}.stat strong{display:block;font-size:28px;margin:4px 0}
-.toolbar{display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:10px;margin:20px 0}
-.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.venue{border:1px solid #e2e7e1;background:white;border-radius:14px;padding:21px;display:flex;flex-direction:column;gap:13px}
-.venue h3{font-family:Georgia,serif;font-size:21px}.venue .meta{display:flex;gap:13px;flex-wrap:wrap;font-size:13px;color:#687a6c}
-.pill{background:#eaf1eb;color:#365949;display:inline-block;padding:5px 9px;border-radius:30px;font-size:12px;font-weight:700}
-.venue .notes{white-space:pre-line;color:#58695e;font-size:14px;overflow-wrap:anywhere}
-.venue .bottom{margin-top:auto;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
-.venue a{color:#28634e;overflow-wrap:anywhere}.error{color:#a33b32}.success{color:#276d44}
-#flash{min-height:25px;margin-bottom:10px;font-size:14px}
-dialog{border:0;border-radius:15px;box-shadow:0 20px 70px #0004;width:min(720px,95vw);max-height:90vh;overflow:auto;padding:26px}
-dialog::backdrop{background:#1228209c} dialog h2{margin-bottom:20px}
-.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:19px}
-.auth{max-width:470px;margin:70px auto} .auth input{margin-bottom:12px}
-#inviteLink{font-size:13px} .empty{text-align:center;padding:45px 20px;color:#64766c}
-footer{text-align:center;color:#819086;font-size:12px;margin-top:30px}
-@media(max-width:950px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.toolbar{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:620px){.cards,.grid2,.grid3,.stats{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.panel{padding:18px}}
-</style></head><body>
-<header><div><h1>✿ Wedding Venue Tracker</h1><small>One place to plan, compare, and decide together</small></div><div class="row"><span id="userLabel"></span><button id="signOut" class="secondary hide">Sign out</button></div></header>
-<main><div id="flash" role="status" aria-live="polite"></div>
-<section id="auth" class="panel auth"><h2>Welcome</h2><p class="muted">Sign in or create an account with your email to access your private venue list.</p>
-<form id="authForm"><label for="email">Email</label><input id="email" type="email" required autocomplete="email"><label for="password">Password</label><input id="password" type="password" minlength="6" required autocomplete="current-password">
-<div class="row"><button type="submit">Sign in</button><button type="button" class="secondary" id="signUp">Create account</button></div></form>
-<p class="muted" style="font-size:13px">Depending on your Supabase settings, new accounts may require email confirmation.</p></section>
-<section id="setup" class="panel auth hide"><h2>Start planning together</h2><p class="muted">Create your shared wedding workspace or join using your partner's invite link.</p>
-<form id="createWorkspace"><label for="workspaceName">Workspace name</label><input id="workspaceName" value="Our Wedding" required><button type="submit">Create workspace</button></form>
-<hr style="border:0;border-top:1px solid #e1e7e1;margin:24px 0"><form id="joinWorkspace"><label for="inviteToken">Invitation code</label><input id="inviteToken" placeholder="Paste invitation code"><button class="secondary" type="submit">Join workspace</button></form></section>
-<section id="app" class="hide">
-<div class="panel"><div class="row between"><div><h2 id="workspaceTitle">Our Wedding</h2><div class="muted">Shared live venue shortlist</div></div><div class="row"><button class="secondary" id="share">Copy partner invite link</button><button id="addVenue">+ Add venue</button></div></div></div>
-<div class="stats"><div class="stat"><span class="muted">Total venues</span><strong id="total">0</strong></div><div class="stat"><span class="muted">Shortlisted</span><strong id="shortlist">0</strong></div><div class="stat"><span class="muted">Tours scheduled</span><strong id="tours">0</strong></div><div class="stat"><span class="muted">Booked</span><strong id="booked">0</strong></div></div>
-<div class="toolbar"><input id="search" placeholder="Search venue or location..." aria-label="Search venues">
-<select id="filter" aria-label="Filter by status"><option value="">All statuses</option><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select>
-<select id="sort" aria-label="Sort venues"><option value="new">Newest first</option><option value="name">Name A–Z</option><option value="cost">Lowest cost</option><option value="rating">Highest rating</option></select>
-<button id="export" class="outline">Export CSV</button><button id="refresh" class="outline">Refresh</button></div>
-<div id="cards" class="cards"></div><div id="empty" class="panel empty hide">No venues match. Add a venue or adjust your filters.</div>
-<footer>Private to workspace members • Changes save to Supabase</footer>
-</section></main>
-<dialog id="editor"><form id="venueForm"><div class="row between"><h2 id="editorTitle">Add venue</h2><button type="button" class="secondary" id="close">Close</button></div>
-<div class="grid2"><div class="field"><label>Name *</label><input name="name" required maxlength="200"></div><div class="field"><label>Location</label><input name="location"></div>
-<div class="field"><label>Website</label><input name="website" type="url" placeholder="https://..."></div><div class="field"><label>Contact / email</label><input name="contact"></div>
-<div class="field"><label>Guest capacity</label><input name="capacity" type="number" min="0"></div><div class="field"><label>Estimated total cost ($)</label><input name="estimated_cost" type="number" min="0" step=".01"></div>
-<div class="field"><label>Status</label><select name="status"><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select></div>
-<div class="field"><label>Rating (1–5)</label><select name="rating"><option value="">Not rated</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
-<div class="field"><label>Tour date</label><input name="tour_date" type="date"></div></div>
-<div class="grid2" style="margin-top:15px"><div class="field"><label>Pros</label><textarea name="pros"></textarea></div><div class="field"><label>Cons</label><textarea name="cons"></textarea></div></div>
-<div class="field" style="margin-top:15px"><label>Notes and follow-ups</label><textarea name="notes"></textarea></div>
-<div class="form-actions"><button type="button" class="danger hide" id="deleteVenue">Delete venue</button><button type="submit" id="saveVenue">Save venue</button></div></form></dialog>
+<meta name="theme-color" content="#243f34"><title>Anna & Alec · Wedding Studio</title>
+<link rel="stylesheet" href="guest-list.css"><link rel="stylesheet" href="site.css">
+</head><body>
+<div class="page-frame">
+<header class="global-header"><div class="global-inner">
+  <a class="brand" href="#overview" id="brandHome"><span class="brand-mark">A <span>✦</span> A</span><span class="brand-text"><strong>Anna &amp; Alec</strong><small>THE WEDDING STUDIO</small></span></a>
+  <div class="header-right"><span class="sync-pill" id="syncState" aria-live="polite">● All changes saved</span><span id="userLabel" class="user-label"></span><button class="header-link hidden" id="shareWorkspace">Invite partner ↗</button><button class="header-link hidden" id="signOut">Sign out</button></div>
+</div></header>
+<div id="appShell" class="hidden">
+<nav class="main-nav" aria-label="Wedding planning"><div class="nav-inner"><button data-tab="overview" class="nav-button active" aria-selected="true">Overview</button><button data-tab="guests" class="nav-button" aria-selected="false">Guest list <span id="navGuestCount" class="nav-count"></span></button><button data-tab="venues" class="nav-button" aria-selected="false">Venues</button><span class="nav-spacer"></span><span class="nav-note">OUR PLANNING SPACE</span></div></nav>
+<main class="main-container">
+<div id="noticeBar" class="alert hidden" role="alert"></div>
+<section id="overviewView" class="tab-section">
+<div class="hero"><div class="hero-content"><div class="eyebrow">A LITTLE SPACE FOR THE BIG DAY <span> ✦</span></div><h1>Our wedding,<br><em>beautifully planned.</em></h1><p>One shared place for every name, every venue, and all the little decisions along the way.</p><div class="hero-actions"><button class="action light" data-goto="guests">Explore guest list <span>↗</span></button><button class="action subtle" data-goto="venues">Explore venues <span>↗</span></button></div></div><div class="hero-art" aria-hidden="true"><div class="art-orbit art-one"></div><div class="art-orbit art-two"></div><span class="art-flower">✳</span><span class="art-center">A <i>&</i> A</span><span class="art-caption">TOGETHER IS A BEAUTIFUL PLACE TO BE</span></div></div>
+<div class="section-header"><div><div class="eyebrow">AT A GLANCE</div><h2>Our plans, in motion</h2></div><button class="text-link" data-goto="guests">View guest list ↗</button></div>
+<div class="overview-stats"><article class="metric-card"><div class="metric-icon">◈</div><span>Invited headcount</span><strong id="homeRSVP">—</strong><small>Including unnamed plus-ones</small></article><article class="metric-card"><div class="metric-icon">✳</div><span>Guest cards</span><strong id="homePeople">—</strong><small>Across all invitation stages</small></article><article class="metric-card"><div class="metric-icon">⌂</div><span>Venues researched</span><strong id="homeVenues">—</strong><small>Our growing list of possibilities</small></article><article class="metric-card"><div class="metric-icon">♡</div><span>Venues shortlisted</span><strong id="homeShortlisted">—</strong><small>The ones we love most</small></article></div>
+<div class="section-header lower"><div><div class="eyebrow">KEEP EXPLORING</div><h2>Where to next?</h2></div></div>
+<div class="feature-grid"><button class="feature-card" data-goto="guests"><span class="feature-illustration illustration-guests">✦ <span>♡</span> ✦</span><span class="feature-kicker">01 / THE PEOPLE</span><strong>Our guest list</strong><span>Organize invitations, family groups, plus-ones, and all our favorite people.</span><span class="feature-go">Open guest list <b>↗</b></span></button><button class="feature-card" data-goto="venues"><span class="feature-illustration illustration-venues">⌂ <span>✳</span></span><span class="feature-kicker">02 / THE PLACE</span><strong>Our venues</strong><span>Research options, compare costs, schedule visits, and build our shortlist.</span><span class="feature-go">Open venues <b>↗</b></span></button></div>
+</section>
+<section id="guestsView" class="tab-section hidden">
+<div class="section-breadcrumb">PLANNING / THE PEOPLE</div>
+<div class="guest-heading"><div><div class="eyebrow">ALL OUR FAVORITE PEOPLE</div><h1>The guest list<span class="heading-spark"> ✳</span></h1><p>Thoughtfully organized, from the first maybe to the final invitation.</p></div></div>
+  <div class="app">
+    <header class="top">
+      <div class="intro">
+        <p class="eyebrow">YOUR LIVE GUEST BOARD</p>
+        <h2>Invitation planning</h2>
+        <p id="summary" class="summary" aria-live="polite">No guests yet</p>
+        <p id="filter-summary" class="filter-summary" hidden></p>
+        <p id="notice" class="notice" hidden></p>
+      </div>
+      <div class="header-actions">
+        <nav class="view-tabs" aria-label="Views">
+          <button type="button" class="view-tab is-active" data-view="board" aria-pressed="true">Guest board</button>
+          <button type="button" class="view-tab" data-view="summary" aria-pressed="false">Summary</button>
+        </nav>
+        <button type="button" class="button" id="download-backup">Download backup</button>
+        <button type="button" class="button" id="restore-backup">Restore backup</button>
+        <input id="restore-file" type="file" accept="application/json,.json" hidden>
+      </div>
+    </header>
+
+    <form id="add-form" class="add-form" autocomplete="off">
+      <input id="add-name" type="text" maxlength="120" placeholder="Add a name and press Enter" aria-label="Name" spellcheck="false">
+      <button class="button primary" type="submit">Add</button>
+    </form>
+
+    <div class="filters">
+      <input id="search" type="search" placeholder="Search names, notes, and tags" aria-label="Search guests">
+      <div id="filter-bar" class="filter-bar"></div>
+    </div>
+
+    <div id="board" class="board">
+      <section class="column" data-status="unsorted" aria-labelledby="col-unsorted">
+        <div class="column-head">
+          <h2 id="col-unsorted">Not yet sorted</h2>
+          <span class="column-count" data-count="unsorted"></span>
+        </div>
+        <div class="cards" data-list="unsorted" role="list"></div>
+      </section>
+      <section class="column" data-status="invited" aria-labelledby="col-invited">
+        <div class="column-head">
+          <h2 id="col-invited">Invited</h2>
+          <span class="column-count" data-count="invited"></span>
+        </div>
+        <div class="cards" data-list="invited" role="list"></div>
+      </section>
+      <section class="column" data-status="maybe" aria-labelledby="col-maybe">
+        <div class="column-head">
+          <h2 id="col-maybe">Maybe</h2>
+          <span class="column-count" data-count="maybe"></span>
+        </div>
+        <div class="cards" data-list="maybe" role="list"></div>
+      </section>
+    </div>
+
+    <section id="summary-view" class="summary-view" hidden aria-label="Summary counts">
+      <p id="summary-scope-line" class="summary-scope-line"></p>
+      <div id="summary-sheet" class="summary-sheet"></div>
+    </section>
+  </div>
+
+</section>
+<section id="venuesView" class="tab-section hidden">
+<div class="section-breadcrumb">PLANNING / THE PLACES</div><div class="section-header venue-title"><div><div class="eyebrow">FINDING OUR PERFECT PLACE</div><h1>Venue planning<span class="heading-spark"> ✳</span></h1><p class="section-subtitle">A shortlist of places that could be the beginning of forever.</p></div><button class="action dark" id="addVenue">+ Add a venue</button></div>
+<div class="venue-stats"><div class="venue-stat"><span>Venues</span><strong id="vTotal">0</strong></div><div class="venue-stat"><span>Shortlisted</span><strong id="vShortlist">0</strong></div><div class="venue-stat"><span>Tours planned</span><strong id="vTours">0</strong></div><div class="venue-stat"><span>Booked</span><strong id="vBooked">0</strong></div></div>
+<div class="venue-tools"><div class="search-icon"><span>⌕</span><input id="venueSearch" placeholder="Search venues, locations, notes…" aria-label="Search venues"></div><select id="venueFilter" aria-label="Filter venues by status"><option value="">All statuses</option><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select><select id="venueSort" aria-label="Sort venues"><option value="new">Recently added</option><option value="name">Name A to Z</option><option value="cost">Lowest cost</option><option value="rating">Highest rating</option></select><button class="action outline" id="venueExport">Export CSV</button><button class="action outline" id="venueRefresh">↻ Refresh</button></div>
+<div id="venueCards" class="venue-grid"></div><div id="venueEmpty" class="empty-state hidden"><span class="empty-flower">✺</span><h2>A blank canvas</h2><p>No venues here yet. Add one, or adjust your filters to see your saved places.</p><button class="action dark" id="emptyAdd">+ Add a venue</button></div>
+</section>
+<footer class="footer"><span>Anna & Alec <b>✦</b> the wedding studio</span><span>Made for the moments that matter.</span></footer>
+</main></div>
+<section id="authView" class="auth-screen"><div class="auth-pane"><div class="eyebrow">WELCOME HOME</div><h1>Let's make<br><em>something wonderful.</em></h1><p>Sign in to your private shared wedding planning space.</p><form id="authForm"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" minlength="6" required><div class="auth-buttons"><button type="submit" class="action dark">Sign in</button><button type="button" class="action outline" id="signUp">Create account</button></div></form><small>New accounts may require an email confirmation before sign-in.</small></div><div class="auth-visual">✳<span>A & A</span></div></section>
+<section id="setupView" class="auth-screen hidden"><div class="auth-pane"><div class="eyebrow">START PLANNING TOGETHER</div><h1>A shared space,<br><em>just for us.</em></h1><p>Create a wedding workspace, or join using your partner's private invitation.</p><form id="createWorkspace"><label for="workspaceName">Workspace name</label><input id="workspaceName" value="Our Wedding" required><button class="action dark" type="submit">Create workspace</button></form><div class="auth-divider">OR</div><form id="joinWorkspace"><label for="inviteToken">Invitation code</label><input id="inviteToken" placeholder="Paste the code from your invite link" required><button class="action outline" type="submit">Join shared workspace</button></form></div></section>
+<aside id="panel" class="panel" hidden></aside><div id="toast" class="toast" hidden role="status"></div>
+<dialog id="venueDialog" class="venue-dialog"><form id="venueForm"><div class="dialog-top"><div><div class="eyebrow">A SPECIAL PLACE</div><h2 id="dialogTitle">Add a venue</h2></div><button class="icon-button" type="button" id="venueClose" aria-label="Close">×</button></div>
+<div class="form-grid"><label>Venue name *<input name="name" required maxlength="200"></label><label>Location<input name="location" placeholder="City, state or address"></label><label>Website<input name="website" type="url" placeholder="https://..."></label><label>Contact / email<input name="contact"></label><label>Guest capacity<input name="capacity" type="number" min="0"></label><label>Estimated total cost ($)<input name="estimated_cost" type="number" step="0.01" min="0"></label><label>Status<select name="status"><option>Researching</option><option>Contacted</option><option>Tour Scheduled</option><option>Toured</option><option>Shortlisted</option><option>Rejected</option><option>Booked</option></select></label><label>Rating<select name="rating"><option value="">Not yet rated</option><option value="1">1 / 5</option><option value="2">2 / 5</option><option value="3">3 / 5</option><option value="4">4 / 5</option><option value="5">5 / 5</option></select></label><label>Tour date<input name="tour_date" type="date"></label></div>
+<div class="form-grid notes-grid"><label>The things we love<textarea name="pros" rows="3"></textarea></label><label>Things to consider<textarea name="cons" rows="3"></textarea></label></div><label class="notes-single">Notes & follow-ups<textarea name="notes" rows="3"></textarea></label>
+<div class="dialog-actions"><button type="button" class="action danger hidden" id="venueDelete">Delete</button><span class="grow"></span><button type="button" class="action outline" id="venueCancel">Cancel</button><button type="submit" class="action dark" id="venueSave">Save venue</button></div></form></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
-<script>
-const SUPABASE_URL='https://iorausxqwrlggudtklib.supabase.co';
-const KEY='sb_publishable_mhqtMUMxfjCKM9AHOVgXgg_pBCmBcNU';
-const db=window.supabase.createClient(SUPABASE_URL,KEY);
-const $=s=>document.querySelector(s);
-let session=null,workspace=null,venues=[],editing=null,channel=null;
-const fields=['name','location','website','contact','capacity','estimated_cost','status','rating','pros','cons','notes','tour_date'];
-const say=(message,error=false)=>{const e=$('#flash');e.textContent=message;e.className=error?'error':'success';};
-const err=e=>say(e?.message||String(e),true);
-const show=(id,on)=>$(id).classList.toggle('hide',!on);
-const validURL=u=>{try{const x=new URL(u);return ['http:','https:'].includes(x.protocol)?x.href:null}catch{return null}};
-const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const money=n=>n==null?'Cost TBD':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
-function render(){
-const q=$('#search').value.trim().toLowerCase(),f=$('#filter').value,sort=$('#sort').value;
-const found=venues.filter(v=>(!f||v.status===f)&&(!q||[v.name,v.location,v.notes,v.pros,v.cons].some(x=>String(x||'').toLowerCase().includes(q))));
-found.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='cost'?(a.estimated_cost??Infinity)-(b.estimated_cost??Infinity):sort==='rating'?(b.rating??0)-(a.rating??0):new Date(b.created_at)-new Date(a.created_at));
-$('#total').textContent=venues.length;$('#shortlist').textContent=venues.filter(v=>v.status==='Shortlisted').length;$('#tours').textContent=venues.filter(v=>v.status==='Tour Scheduled').length;$('#booked').textContent=venues.filter(v=>v.status==='Booked').length;
-$('#cards').replaceChildren();show('#empty',!found.length);
-for(const v of found){const card=document.createElement('article');card.className='venue';
-const link=validURL(v.website);
-card.innerHTML='<div class="row between"><span class="pill">'+escapeHTML(v.status)+'</span><span style="color:#b58d40">'+(v.rating?'★'.repeat(v.rating):'Not rated')+'</span></div><div><h3>'+escapeHTML(v.name)+'</h3><div class="meta"><span>📍 '+escapeHTML(v.location||'Location TBD')+'</span><span>👥 '+escapeHTML(v.capacity??'Capacity TBD')+'</span></div></div><div class="meta"><strong>'+money(v.estimated_cost)+'</strong>'+(v.tour_date?'<span>Tour: '+escapeHTML(v.tour_date)+'</span>':'')+'</div>'+(v.pros?'<div class="notes"><b>Pros:</b> '+escapeHTML(v.pros)+'</div>':'')+(v.cons?'<div class="notes"><b>Cons:</b> '+escapeHTML(v.cons)+'</div>':'')+(v.notes?'<div class="notes">'+escapeHTML(v.notes)+'</div>':'')+'<div class="bottom">'+(link?'<a target="_blank" rel="noopener noreferrer" href="'+escapeHTML(link)+'">Visit website ↗</a>':'')+'</div>';
-const b=document.createElement('button');b.className='secondary';b.textContent='Edit';b.onclick=()=>openEditor(v);card.querySelector('.bottom').append(b);$('#cards').append(card)}
-}
-async function load(){if(!workspace)return;const {data,error}=await db.from('venues').select('*').eq('workspace_id',workspace.id).order('created_at',{ascending:false});if(error)return err(error);venues=data||[];render();}
-async function init(){const {data:{session:s}}=await db.auth.getSession();session=s;$('#userLabel').textContent=s?.user?.email||'';show('#signOut',!!s);show('#auth',!s);show('#setup',false);show('#app',false);
-if(channel){await db.removeChannel(channel);channel=null}if(!s)return;
-const {data,error}=await db.from('workspaces').select('*').order('created_at').limit(1);
-if(error)return err(error);
-workspace=data?.[0]||null;
-if(!workspace){show('#setup',true);const code=new URLSearchParams(location.search).get('invite');if(code)$('#inviteToken').value=code;return}
-$('#workspaceTitle').textContent=workspace.name;show('#app',true);await load();
-channel=db.channel('venues-'+workspace.id).on('postgres_changes',{event:'*',schema:'public',table:'venues',filter:'workspace_id=eq.'+workspace.id},()=>load()).subscribe();
-}
-$('#authForm').onsubmit=async e=>{e.preventDefault();const {error}=await db.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});if(error)err(error);else {say('Signed in');await init()}};
-$('#signUp').onclick=async()=>{if(!$('#authForm').reportValidity())return;const {data,error}=await db.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});if(error)err(error);else if(!data.session)say('Account created. Check your email to confirm, then sign in.');else{say('Account created');await init()}};
-$('#signOut').onclick=async()=>{await db.auth.signOut();workspace=null;venues=[];await init()};
-$('#createWorkspace').onsubmit=async e=>{e.preventDefault();const {error}=await db.rpc('create_wedding_workspace',{workspace_name:$('#workspaceName').value});if(error)err(error);else{say('Workspace created');await init()}};
-$('#joinWorkspace').onsubmit=async e=>{e.preventDefault();const {error}=await db.rpc('join_wedding_workspace',{token:$('#inviteToken').value.trim()});if(error)err(error);else{history.replaceState(null,'',location.pathname);say('Joined workspace');await init()}};
-$('#share').onclick=async()=>{const invite=location.origin+location.pathname+'?invite='+workspace.invite_token;try{await navigator.clipboard.writeText(invite);say('Invite link copied. Send it privately to your partner.')}catch{window.prompt('Copy your invitation link:',invite)}};
-$('#addVenue').onclick=()=>openEditor(null);$('#close').onclick=()=>$('#editor').close();
-function openEditor(v){editing=v;$('#venueForm').reset();$('#editorTitle').textContent=v?'Edit venue':'Add venue';show('#deleteVenue',!!v);for(const f of fields){const el=$('#venueForm').elements.namedItem(f);if(el)el.value=v?.[f]??''}$('#editor').showModal()}
-$('#venueForm').onsubmit=async e=>{e.preventDefault();const button=$('#saveVenue');button.disabled=true;const values={};for(const f of fields){const x=$('#venueForm').elements.namedItem(f).value.trim();values[f]=['capacity','estimated_cost','rating','tour_date'].includes(f)?(x===''?null:(f==='tour_date'?x:Number(x))):x}
-values.workspace_id=workspace.id;
-const result=editing?await db.from('venues').update(values).eq('id',editing.id).eq('workspace_id',workspace.id):await db.from('venues').insert(values);
-button.disabled=false;if(result.error)return err(result.error);$('#editor').close();say(editing?'Venue updated':'Venue added');await load()};
-$('#deleteVenue').onclick=async()=>{if(!editing||!confirm('Delete this venue permanently?'))return;const {error}=await db.from('venues').delete().eq('id',editing.id).eq('workspace_id',workspace.id);if(error)return err(error);$('#editor').close();say('Venue deleted');await load()};
-['#search','#filter','#sort'].forEach(id=>$(id).addEventListener(id==='#search'?'input':'change',render));
-$('#refresh').onclick=load;
-$('#export').onclick=()=>{const columns=['name','location','website','contact','capacity','estimated_cost','status','rating','tour_date','pros','cons','notes'];const csv=[columns.join(','),...venues.map(v=>columns.map(k=>'"'+String(v[k]??'').replace(/"/g,'""')+'"').join(','))].join('\r\n');const a=document.createElement('a');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=url;a.download='wedding-venues.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
-db.auth.onAuthStateChange((_event,s)=>{if(s?.user?.id!==session?.user?.id)queueMicrotask(init)});
-init().catch(err);
-</script></body></html>
+<script src="guest-list.js" defer></script><script src="main.js" defer></script>
+</div></body></html>
