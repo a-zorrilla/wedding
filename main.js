@@ -13,6 +13,9 @@
   let channels=[], guestRevision=0, guestPending=null, guestTimer=null, guestSaving=false, guestBlocked=false, guestReady=false;
 
   function notice(message, severe=false) {
+    const authVisible=!$('#authView').classList.contains('hidden');
+    const authMessage=$('#authMessage');
+    if(authMessage && authVisible){authMessage.textContent=message;authMessage.style.display='block';authMessage.style.background=severe?'#ffe9e4':'#eff5ed';authMessage.style.color=severe?'#8f3129':'#294735';}
     $('#noticeBar').textContent=message;
     $('#noticeBar').classList.remove('hidden');
     $('#noticeBar').style.background=severe?'#ffebe5':'#fff4df';
@@ -152,8 +155,44 @@
     document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>tab(b.dataset.goto)));
     $('#brandHome').addEventListener('click',e=>{e.preventDefault();if(workspace)tab('overview');});
     window.addEventListener('hashchange',()=>{if(workspace)tab(location.hash.slice(1));});
-    $('#authForm').addEventListener('submit',async e=>{e.preventDefault();const {error}=await db.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});if(error)fail(error);});
-    $('#signUp').addEventListener('click',async()=>{if(!$('#authForm').reportValidity())return;const {data,error}=await db.auth.signUp({email:$('#email').value.trim(),password:$('#password').value});if(error)fail(error);else if(!data.session)notice('Account created. Check your inbox to confirm your email, then sign in.');});
+    const showAuthMessage=(message,severe=false)=>notice(message,severe);
+    const authEmail=()=>$('#email').value.trim();
+    const authRedirect=location.origin+location.pathname;
+    $('#authForm').addEventListener('submit',async e=>{
+      e.preventDefault();const button=$('#loginSubmit');button.disabled=true;button.textContent='Signing in…';
+      try{
+        const {error}=await db.auth.signInWithPassword({email:authEmail(),password:$('#password').value});
+        if(error){showAuthMessage(error.message==='Invalid login credentials'?'Email or password not recognized. If you already confirmed your account, use Forgot password to choose a new password.':error.message,true);}
+        else showAuthMessage('Signed in. Opening your wedding workspace…');
+      }catch(error){showAuthMessage(error.message||'Could not contact Supabase. Please try again.',true);}
+      finally{button.disabled=false;button.textContent='Sign in';}
+    });
+    $('#signUp').addEventListener('click',async()=>{
+      if(!$('#authForm').reportValidity())return;const button=$('#signUp');button.disabled=true;
+      try{
+        const {data,error}=await db.auth.signUp({email:authEmail(),password:$('#password').value,options:{emailRedirectTo:authRedirect}});
+        if(error)showAuthMessage(error.message,true);
+        else if(!data.session)showAuthMessage('Check your email for confirmation. If you already registered, choose Sign in or Forgot password. Check spam as well.');
+        else showAuthMessage('Account created. Opening your workspace…');
+      }catch(error){showAuthMessage(error.message||'Sign-up failed',true);}
+      finally{button.disabled=false;}
+    });
+    $('#resendConfirmation').addEventListener('click',async()=>{
+      if(!$('#email').checkValidity()||!authEmail()){$('#email').reportValidity();return;}
+      const button=$('#resendConfirmation');button.disabled=true;
+      try{const {error}=await db.auth.resend({type:'signup',email:authEmail(),options:{emailRedirectTo:authRedirect}});
+        showAuthMessage(error?error.message:'If this email has a pending registration and sending is permitted, a new confirmation email will arrive. Check spam and avoid older confirmation links.',!!error);
+      }catch(error){showAuthMessage(error.message||'Could not resend confirmation',true);}
+      finally{button.disabled=false;}
+    });
+    $('#forgotPassword').addEventListener('click',async()=>{
+      if(!$('#email').checkValidity()||!authEmail()){$('#email').reportValidity();return;}
+      const button=$('#forgotPassword');button.disabled=true;
+      try{const {error}=await db.auth.resetPasswordForEmail(authEmail(),{redirectTo:authRedirect});
+        showAuthMessage(error?error.message:'If the email is registered and email delivery is permitted, a password reset link will arrive. Check spam.',!!error);
+      }catch(error){showAuthMessage(error.message||'Could not request password reset',true);}
+      finally{button.disabled=false;}
+    });
     $('#shareWorkspace').addEventListener('click',async()=>{if(!workspace)return;const link=location.origin+location.pathname+'?invite='+workspace.invite_token+'#overview';try{await navigator.clipboard.writeText(link);notice('Private invitation link copied. Share it only with someone you want to give access to your wedding workspace.');}catch{prompt('Copy your private invitation link:',link);}});
     $('#signOut').addEventListener('click',async()=>{if(guestPending||guestSaving||guestBlocked){if(!confirm('Guest changes may not have been saved. Download a backup first. Sign out anyway?'))return;}await db.auth.signOut();});
     $('#createWorkspace').addEventListener('submit',async e=>{e.preventDefault();const {error}=await db.rpc('create_wedding_workspace',{workspace_name:$('#workspaceName').value});if(error)fail(error);else await bootstrap();});
@@ -166,7 +205,16 @@
     });
 
     window.addEventListener('beforeunload',e=>{if(guestPending||guestSaving||guestBlocked){e.preventDefault();e.returnValue='';}});
-    db.auth.onAuthStateChange((event)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT')queueMicrotask(()=>bootstrap().catch(fail));});
+    db.auth.onAuthStateChange((event)=>{
+      if(event==='PASSWORD_RECOVERY')queueMicrotask(async()=>{
+        const newPassword=prompt('Password recovery: enter your NEW wedding tracker password (at least 8 characters).');
+        if(newPassword===null)return;
+        if(newPassword.length<8){notice('Password must be at least 8 characters.',true);return;}
+        const {error}=await db.auth.updateUser({password:newPassword});
+        notice(error?error.message:'Password updated. You can now sign in.',!!error);
+      });
+      if(event==='SIGNED_IN'||event==='SIGNED_OUT')queueMicrotask(()=>bootstrap().catch(fail));
+    });
   }
   async function start(){
     if(!window.supabase||!window.GuestListApp||!window.VenuePlanner){notice('The app could not load its required scripts. Refresh the page and check your connection.',true);return;}
