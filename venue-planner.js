@@ -81,7 +81,7 @@
       if(photoStatus==='missing'&&photo(v))return false;
       return true;
     });
-    list.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='cost'?(calculate(a).total??Infinity)-(calculate(b).total??Infinity):sort==='rating'?(average(b)??-1)-(average(a)??-1):new Date(b.created_at)-new Date(a.created_at));
+    list.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='cost'?(String(a.currency||'USD').localeCompare(String(b.currency||'USD')) || (calculate(a).total??Infinity)-(calculate(b).total??Infinity)):sort==='rating'?(average(b)??-1)-(average(a)??-1):new Date(b.created_at)-new Date(a.created_at));
     return list;
   }
   function card(v){
