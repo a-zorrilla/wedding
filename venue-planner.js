@@ -8,7 +8,7 @@
   const shown = v => v == null || v === '' ? '—' : String(v);
   const yesNo = v => v === null || v === undefined || v === '' ? 'Unknown' : v === true || v === 'true' ? 'Yes' : 'No';
   const validUrl = input => { try { const url = new URL(input); return ['http:','https:'].includes(url.protocol) ? url.href : null; } catch { return null; } };
-  const photo = v => validUrl(v.image_url);
+  const photo = v => window.VenueGallery?.firstImage(v) || validUrl(v.image_url);
   const COUNTRIES={IT:{label:'Italy',flag:'🇮🇹'},CO:{label:'Colombia',flag:'🇨🇴'},PT:{label:'Portugal',flag:'🇵🇹'}};
   const countryOf=v=>COUNTRIES[v.country_code]?v.country_code:/colombia/i.test(v.location||'')?'CO':/portugal/i.test(v.location||'')?'PT':/italy/i.test(v.location||'')?'IT':'';
   const countryDisplay=v=>{const c=COUNTRIES[countryOf(v)];return c?c.flag+' '+c.label:'Country TBD';};
@@ -26,10 +26,10 @@
     {name:'Travel & capacity',items:[['closest_airport','Airport'],['airport_transfer_minutes','Airport min'],['accommodation_transfer_minutes','Hotel min'],['nearby_hotel_rooms','Hotel rooms nearby'],['on_site_sleeping_capacity','Sleeps on site'],['ceremony_capacity','Ceremony seats'],['seated_dinner_capacity','Dinner seats'],['indoor_backup','Indoor backup'],['rain_plan','Rain plan']]},
     {name:'Services & rules',items:[['coordination_type','Coordination'],['external_vendor_policy','Outside vendors'],['external_vendors_planned','Use outside vendors?'],['venue_inclusions','Included'],['curfew_time','Curfew'],['noise_restrictions','Restrictions']]},
     {name:'Wedding budget',items:[['guest_count','Planning guests'],['currency','Currency'],['site_fee','Site fee'],['site_fee_treatment','Site fee treatment'],['food_beverage_minimum','F&B minimum'],['food_beverage_per_guest','F&B per guest'],['food_beverage_quote','Combined F&B quote (legacy)'],['food_minimum','Food minimum'],['food_per_guest','Food/guest'],['food_quote','Food quote'],['beverage_minimum','Drinks minimum'],['beverage_per_guest','Drinks/guest'],['beverage_quote','Drinks quote'],['service_charge_pct','Service %'],['tax_pct','Tax %'],['external_vendor_fee','Outside vendor fee'],['additional_fees','Venue extras'],['additional_fees_description','Extra fee details'],['outside_vendor_budget','Outside suppliers'],['other_wedding_costs','Other costs'],['quoted_total','All-in quote'],['_total','Estimated total'],['_per_guest','Cost per guest'],['_cost_status','Estimate status']]},
-    {name:'Our notes & ratings',items:[['_your_rating','Your rating'],['_partner_rating','Partner rating'],['_average_rating','Average rating'],['rating','Previous shared score'],['pros','Pros'],['cons','Cons'],['notes','Notes']]}
+    {name:'Our notes & ratings',items:[['_alec_rating','Alec'],['_anna_rating','Anna'],['_katherine_rating','Katherine'],['_ethan_rating','Ethan'],['_average_rating','Average rating'],['rating','Previous shared score'],['pros','Pros'],['cons','Cons'],['notes','Notes']]}
   ];
   let context = () => ({}), reload = async () => {}, report = console.error, notify = () => {};
-  let venues = [], ratings = [], selected = null, editing = null, mode = localStorage.getItem('wedding-venue-mode') === 'table' ? 'table' : 'cards';
+  let venues = [], ratings = [], ratingSlots = [], selected = null, editing = null, mode = localStorage.getItem('wedding-venue-mode') === 'table' ? 'table' : 'cards';
   const getContext = () => context();
   function calculate(v) {
     const guests=num(v.guest_count)||100,has=k=>num(v[k])!==null;
@@ -70,7 +70,8 @@
       if(search&&!['name','location','availability_notes','closest_airport','pros','cons','notes','venue_inclusions'].some(f=>String(v[f]||'').toLowerCase().includes(search)))return false;
       const r=ratingsFor(v);
       if(rating==='unrated'&&r.r.length!==0)return false;
-      if(rating==='both'&&!(r.own&&r.other.length))return false;
+      if(rating==='both'&&r.r.length<2)return false;
+      if(rating==='all'&&!(ratingSlots.length>=4 && ratingSlots.every(slot=>slot.user_id && r.r.some(x=>x.user_id===slot.user_id))))return false;
       if((rating==='3'||rating==='4')&&!(r.avg!==null&&r.avg>=Number(rating)))return false;
       if(capacity==='unknown'&&num(v.seated_dinner_capacity)!==null)return false;
       if(capacity&&capacity!=='unknown'&&!(num(v.seated_dinner_capacity)!==null&&num(v.seated_dinner_capacity)>=Number(capacity)))return false;
@@ -85,20 +86,24 @@
     return list;
   }
   function card(v){
-    const c=calculate(v), rating=ratingsFor(v), img=photo(v);
+    const c=calculate(v),rating=ratingsFor(v);
     const el=document.createElement('article');el.className='venue-card venue-visual-card';
     const flag=COUNTRIES[countryOf(v)];
-    const frame='<div class="venue-image">'+(img?'<img src="'+safe(img)+'" alt="Photo of '+safe(v.name)+'" loading="lazy" referrerpolicy="no-referrer">':'')+'<div class="venue-no-image" '+(img?'hidden':'')+'><span aria-hidden="true">✧</span><small>PHOTO NOT ADDED</small></div><span class="venue-image-badge">'+safe(v.status)+'</span><span class="venue-country-flag" aria-label="'+safe(flag?.label||'Country unknown')+'">'+(flag?flag.flag+' '+safe(flag.label):'🌐 Country TBD')+'</span></div>';
+    const frame='<div class="venue-image">'+window.VenueGallery.cardMarkup(v)+'<span class="venue-image-badge">'+safe(v.status)+'</span><span class="venue-country-flag" aria-label="'+safe(flag?.label||'Country unknown')+'">'+(flag?flag.flag+' '+safe(flag.label):'🌐 Country TBD')+'</span></div>';
     el.innerHTML=frame+'<div class="venue-card-interior"><div class="venue-card-heading"><h3>'+safe(v.name)+'</h3><span class="venue-rating">'+(rating.avg===null?'☆ Unrated':'★ '+rating.avg.toFixed(1))+'</span></div><div class="venue-location">⌖ '+safe(v.location||'Location to confirm')+'</div><div class="venue-card-chips"><span>'+safe(shown(v.seated_dinner_capacity))+' dinner guests</span><span>'+(v.indoor_backup===true?'Indoor backup ✓':v.indoor_backup===false?'No indoor backup':'Rain plan TBD')+'</span></div><div class="venue-card-prices"><div><small>'+safe(c.label)+'</small><strong>'+(c.total!==null?cash(c.total,v.currency):'Cost TBD')+'</strong></div><div><small>Per guest · '+c.guests+'</small><strong>'+cash(c.perGuest,v.currency)+'</strong></div></div><button class="action dark venue-open-detail" type="button">View venue &amp; costs ↗</button></div>';
-    const image=el.querySelector('img'); if(image)image.addEventListener('error',()=>{image.remove();el.querySelector('.venue-no-image').hidden=false;});
-    el.querySelector('button').addEventListener('click',()=>openDetails(v));return el;
+    window.VenueGallery.bindCard(el,v);
+    el.querySelector('.venue-open-detail').addEventListener('click',()=>openDetails(v));
+    return el;
   }
   function formatted(v,key){const c=calculate(v),r=ratingsFor(v);
     if(key==='_total')return c.total==null?'—':cash(c.total,v.currency);
     if(key==='_per_guest')return cash(c.perGuest,v.currency);
     if(key==='_cost_status')return c.label;
-    if(key==='_your_rating')return r.own?String(r.own.score)+'/5':'—';
-    if(key==='_partner_rating')return r.other.length?r.other.map(x=>x.score+'/5').join(', '):'—';
+    if(['_alec_rating','_anna_rating','_katherine_rating','_ethan_rating'].includes(key)){
+      const slot=ratingSlots.find(s=>s.person_key===key.slice(1,-7));
+      const saved=r.r.find(x=>x.user_id===slot?.user_id);
+      return saved?String(saved.score)+'/5':'—';
+    }
     if(key==='_average_rating')return r.avg===null?'—':r.avg.toFixed(1)+'/5';
     if(key==='rating')return num(v.rating)===null?'—':v.rating+'/5';
     if(key==='country_code')return countryDisplay(v);
@@ -187,7 +192,7 @@
     const uri=URL.createObjectURL(new Blob(['\ufeff',csv],{type:'text/csv;charset=utf-8'}));const link=document.createElement('a');link.href=uri;link.download='wedding-venue-comparison.csv';link.click();setTimeout(()=>URL.revokeObjectURL(uri),1500);
   }
   window.VenuePlanner={
-    init(options){context=options.getContext;reload=options.reload;report=options.report;notify=options.notify;
+    init(options){context=options.getContext;reload=options.reload;report=options.report;notify=options.notify;window.VenueGallery.init(options);
       $('#addVenue').onclick=()=>openEdit(null);$('#emptyAdd').onclick=()=>openEdit(null);
       $('#venueClose').onclick=$('#venueCancel').onclick=()=>$('#venueDialog').close();
       $('#venueDetailClose').onclick=$('#venueDetailDismiss').onclick=()=>$('#venueDetailDialog').close();
@@ -203,8 +208,8 @@
       $('#venueTableMode').onclick=()=>{mode='table';localStorage.setItem('wedding-venue-mode',mode);render();};
       $('#venueExport').onclick=exportCSV;$('#venueRefresh').onclick=reload;
     },
-    setData(v,r){venues=v||[];ratings=r||[];render();},
-    reset(){venues=[];ratings=[];selected=null;editing=null;$('#venueDetailDialog')?.close();$('#venueDialog')?.close();},
+    setData(v,r,slots,photos){venues=v||[];ratings=r||[];ratingSlots=slots||[];window.VenueGallery.setData(photos||[]);render();},
+    reset(){venues=[];ratings=[];ratingSlots=[];window.VenueGallery.reset();selected=null;editing=null;$('#venueDetailDialog')?.close();$('#venueDialog')?.close();},
     render
   };
 })();
